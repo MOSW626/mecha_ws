@@ -8,9 +8,9 @@ import select
 # PID Gains
 Kp = 0.55 # Directly related to error value which is differnce between left and right ultrasonic sensor
 Ki = 0.0
-Kd = 0.02 
+Kd = 0.02
 
-base_angle = 90  
+base_angle = 90
 prev_error = 0
 integral = 0
 
@@ -21,7 +21,7 @@ SERVO_PIN = 13
 TRIG_LEFT = 17
 ECHO_LEFT = 27
 TRIG_RIGHT = 5
-ECHO_RIGHT = 6                          
+ECHO_RIGHT = 6
 
 
 MOTOR_FREQ = 1000
@@ -46,8 +46,8 @@ motor_pwm.start(0)
 servo_pwm.start(0)
 
 #Distance Clipping values (Values more than 1.5m are all limited to 1.5m)
-MIN_CM, MAX_CM = 3.0, 150.0   
-ALPHA = 0.85                  
+MIN_CM, MAX_CM = 3.0, 150.0
+ALPHA = 0.85
 
 def sample_distance(trig, echo):
     GPIO.output(trig, True)
@@ -57,7 +57,7 @@ def sample_distance(trig, echo):
     t0 = time.time()
     while GPIO.input(echo) == 0:
         if time.time() - t0 > 0.02:  # Echo pulse is not going (Wiring, system issues)
-            return None  
+            return None
     start = time.time()
 
     while GPIO.input(echo) == 1:
@@ -69,11 +69,11 @@ def sample_distance(trig, echo):
     dist = max(MIN_CM, min(dist, MAX_CM)) # Clipping distance values
     return dist
 
-def read_stable(trig, echo): 
+def read_stable(trig, echo):
     val = sample_distance(trig, echo)
     time.sleep(0.001)
     return val
- 
+
 
 def smooth(prev_value, new_value, alpha=ALPHA):
     if new_value == 8787:
@@ -90,7 +90,7 @@ def set_servo_angle(degree):
     duty = SERVO_MIN_DUTY + (degree * (SERVO_MAX_DUTY - SERVO_MIN_DUTY) / 180.0)
     servo_pwm.ChangeDutyCycle(duty)
     time.sleep(0.1)
-    
+
 def move_forward(speed):
     GPIO.output(DIR_PIN, GPIO.HIGH)
     motor_pwm.ChangeDutyCycle(speed)
@@ -118,7 +118,7 @@ def speed_from_angle(angle, amin=45, amid=90, amax=135,
                      vmin=SPEED_MIN, vmax=SPEED_MAX):
     # Dividing cases if it is left or right
     if angle <= amid:
-        t = (angle - amin) / (amid - amin) # Smaller value calculated with bigger steering angle 
+        t = (angle - amin) / (amid - amin) # Smaller value calculated with bigger steering angle
         t = max(0.0, min(1.0, t)) # Normalization
         if t != 0:
             t = 1 / t * 3  # New value t which has bigger value with bigger steering angle
@@ -131,7 +131,7 @@ def speed_from_angle(angle, amin=45, amid=90, amax=135,
             t = 1 / t * 3
         t = min(15, t)
         return vmin + (vmax - vmin) * t * 0.25
-        
+
 # Code Running
 try:
     print("Press 'a' to enter PID autonomous mode, 'q' to quit.")
@@ -140,8 +140,8 @@ try:
 
         if key == 'a':
             print("PID Autonomous mode activated.")
-            prev_error = 0    
-            integral = 0        
+            prev_error = 0
+            integral = 0
 
             last_left  = None
             last_right = None
@@ -168,17 +168,17 @@ try:
                 print(f"L: {left:.1f} R: {right:.1f} Err: {error:.1f} "
                       f"Angle: {angle:.1f} Speed: {MOTOR_SPEED:.0f}")
 
-                angle1 = max(50, min(130, base_angle - output)) # Clipping angle value to avoid too much steering 
+                angle1 = max(50, min(130, base_angle - output)) # Clipping angle value to avoid too much steering
                 angle = round(angle1, 0)
-                
+
                 # Rule-based logics: if get close to wall, get far away (current threshold = 10cm)
                 if left <= 7:
-                    set_servo_angle(130) 
+                    set_servo_angle(130)
                 elif right <= 7:
                     set_servo_angle(50)
                 else:
                     set_servo_angle(angle)
-                     
+
                 move_forward(MOTOR_SPEED) # Speed changes in related to steering angle
                 time.sleep(0.0001)
 
