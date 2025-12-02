@@ -8,18 +8,22 @@
 
 ```
 line_tracing/
-├── collect_data.py      # 데이터 수집 스크립트
-├── train_model.py       # 모델 학습 스크립트
-├── run_line_tracing.py  # 라인트레이싱 실행 스크립트
-├── data/                # 수집된 이미지 데이터
+├── collect_data.py          # 데이터 수집 스크립트 (키보드 입력 즉시 캡처)
+├── organize_images.py       # 폰 이미지 분류 스크립트
+├── train_model.py           # 모델 학습 스크립트
+├── line_tracing_hybrid.py   # 하이브리드 라인트레이싱 (CV 주도 + ML 보조) ⭐
+├── line_tracing_cv.py       # 순수 CV 방식 라인트레이싱
+├── run_line_tracing.py       # 순수 ML 방식 라인트레이싱
+├── data/                    # 수집된 이미지 데이터
 │   ├── green/
 │   ├── left/
 │   ├── middle/
 │   ├── noline/
 │   ├── red/
 │   └── right/
-├── model.tflite         # 학습된 모델 (학습 후 생성)
-└── README.md
+├── model.tflite             # 학습된 모델 (학습 후 생성)
+├── README.md
+└── README_CV.md             # CV 방식 상세 설명
 ```
 
 ## 클래스 정의
@@ -37,19 +41,25 @@ line_tracing/
 
 ### 1. 데이터 수집
 
-**방법 A: 카메라로 실시간 수집 (Raspberry Pi에서)**
+**실시간 키보드 입력으로 즉시 캡처 (Raspberry Pi에서)**
 ```bash
 python3 collect_data.py
 ```
 
-**방법 B: 폰으로 찍은 이미지 분류 (Mac에서)**
+키보드를 누르면 그 순간의 프레임이 즉시 저장됩니다:
+- `g` - green (초록불) 즉시 저장
+- `l` - left (좌회전) 즉시 저장
+- `m` - middle (중앙/직진) 즉시 저장
+- `n` - noline (라인 없음) 즉시 저장
+- `s` - red (빨간불/정지) 즉시 저장
+- `r` - right (우회전) 즉시 저장
+- `q` - 종료
+
+**또는 폰으로 찍은 이미지 분류 (Mac에서)**
 ```bash
 # 1. 폰으로 이미지들을 하나의 폴더에 모으기 (예: photos/)
 # 2. 이미지 분류 스크립트 실행
 python3 organize_images.py --input photos/
-
-# 옵션: --move 플래그를 사용하면 원본 이미지를 이동 (기본값: 복사)
-python3 organize_images.py --input photos/ --move
 ```
 
 **키보드 입력:**
@@ -95,18 +105,29 @@ python3 train_model.py
 
 ### 3. 라인트레이싱 실행
 
+**하이브리드 방식 (권장) - CV 주도 + ML 보조**
+```bash
+python3 line_tracing_hybrid.py
+```
+
+**순수 CV 방식 (ML 없이)**
+```bash
+python3 line_tracing_cv.py
+```
+
+**순수 ML 방식**
 ```bash
 python3 run_line_tracing.py
 ```
 
-학습된 모델을 사용하여 자동으로 라인트레이싱을 수행합니다.
-
-**동작:**
-- 카메라에서 프레임을 캡처
-- 모델로 예측 수행
-- 예측 결과에 따라 모터 제어
-- 빨간불 감지 시 정지
-- `q` 키로 종료
+**하이브리드 방식 동작:**
+- **기본**: CV 방식으로 빠른 제어 (대부분의 경우)
+- **ML 사용 시점**:
+  1. CV가 라인을 찾지 못할 때 (신뢰도 낮음)
+  2. 트래픽 라이트 감지 (더 정확함)
+  3. 복잡한 곡선 구간 (선택적)
+- CV 비중을 높여서 빠른 반응 속도 유지
+- ML은 보조적으로만 사용하여 성능 저하 최소화
 
 ## 요구사항
 
@@ -149,6 +170,28 @@ pip install -r requirements.txt
 - 모델을 찾을 수 없음: `train_model.py`를 먼저 실행하세요
 - GPIO 오류: `sudo` 권한으로 실행하거나 GPIO 권한 설정
 
+## 하이브리드 방식 전략
+
+하이브리드 방식(`line_tracing_hybrid.py`)은 CV와 ML의 장점을 결합합니다:
+
+### CV 주도 전략
+- **빠른 처리**: 대부분의 경우 CV로 즉시 제어
+- **낮은 리소스**: ML 추론 오버헤드 최소화
+- **실시간 반응**: 매우 빠른 제어 루프
+
+### ML 보조 전략
+- **CV 신뢰도 낮을 때**: ML로 재시도
+- **트래픽 라이트**: ML로 더 정확한 감지
+- **복잡한 상황**: 필요시 ML 활용
+
+### 파라미터 조정
+`line_tracing_hybrid.py`에서 조정 가능:
+```python
+CV_CONFIDENCE_THRESHOLD = 0.7  # CV 신뢰도 임계값 (낮으면 ML 더 자주 사용)
+ML_USE_INTERVAL = 3  # ML을 몇 프레임마다 사용할지 (3 = 3프레임마다 1번)
+ML_CONFIDENCE_THRESHOLD = 0.6  # ML 신뢰도 임계값
+```
+
 ## 성능 개선 팁
 
 1. **데이터 품질**
@@ -165,6 +208,7 @@ pip install -r requirements.txt
    - 프레임 레이트 조정
    - 예측 버퍼 크기 조정
    - 신뢰도 임계값 조정
+   - 하이브리드 방식에서 CV/ML 비중 조정
 
 ## 라이선스
 

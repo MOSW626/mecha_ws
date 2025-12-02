@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 """
 라인트레이싱 데이터 수집 스크립트
-카메라에서 이미지를 캡처하고 키보드로 라벨링합니다.
+키보드를 누르면 그 순간의 프레임을 즉시 캡처하여 저장합니다.
 
 사용법:
     python3 collect_data.py
 
-키보드 입력:
-    'f' - forward (직진)
-    'l' - left (좌회전)
-    'r' - right (우회전)
-    'g' - green (초록불)
-    's' - red (빨간불/정지)
-    'n' - noline (라인 없음)
+키보드 입력 (키를 누르면 즉시 저장):
+    'g' - green (초록불) - 즉시 저장
+    'l' - left (좌회전) - 즉시 저장
+    'm' - middle (중앙/직진) - 즉시 저장
+    'n' - noline (라인 없음) - 즉시 저장
+    's' - red (빨간불/정지) - 즉시 저장
+    'r' - right (우회전) - 즉시 저장
     'q' - 종료
-    스페이스바 - 현재 프레임 저장
 """
 
 import os
@@ -64,14 +63,13 @@ def main():
     print("=" * 60)
     print("라인트레이싱 데이터 수집 도구")
     print("=" * 60)
-    print("\n키보드 입력:")
-    print("  'g' - green (초록불)")
-    print("  'l' - left (좌회전)")
-    print("  'm' - middle (중앙/직진)")
-    print("  'n' - noline (라인 없음)")
-    print("  's' - red (빨간불/정지)")
-    print("  'r' - right (우회전)")
-    print("  스페이스바 - 현재 프레임 저장")
+    print("\n키보드 입력 (키를 누르면 즉시 저장):")
+    print("  'g' - green (초록불) - 즉시 저장")
+    print("  'l' - left (좌회전) - 즉시 저장")
+    print("  'm' - middle (중앙/직진) - 즉시 저장")
+    print("  'n' - noline (라인 없음) - 즉시 저장")
+    print("  's' - red (빨간불/정지) - 즉시 저장")
+    print("  'r' - right (우회전) - 즉시 저장")
     print("  'q' - 종료")
     print("=" * 60)
 
@@ -91,8 +89,7 @@ def main():
 
     # 통계
     counts = {class_name: 0 for class_name in CLASSES.values()}
-    current_class = None
-    last_key = None
+    last_save_time = {}  # 키별 마지막 저장 시간 (중복 저장 방지)
 
     try:
         while True:
@@ -103,43 +100,46 @@ def main():
             # 화면에 정보 표시
             display_frame = frame_bgr.copy()
 
-            # 현재 선택된 클래스 표시
-            if current_class:
-                text = f"Class: {current_class.upper()}"
-                color = (0, 255, 0) if current_class in ['forward', 'green'] else (0, 0, 255) if current_class == 'red' else (255, 255, 0)
-                cv2.putText(display_frame, text, (10, 30),
-                           cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, 2, cv2.LINE_AA)
-
             # 통계 표시
             stats_text = " | ".join([f"{k}: {counts[k]}" for k in CLASSES.values()])
-            cv2.putText(display_frame, stats_text, (10, 60),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+            cv2.putText(display_frame, stats_text, (10, 30),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2, cv2.LINE_AA)
 
             # 안내 텍스트
-            cv2.putText(display_frame, "Press key to select class, SPACE to save",
+            cv2.putText(display_frame, "Press key to capture instantly (g/l/m/n/s/r/q)",
                        (10, display_frame.shape[0] - 20),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2, cv2.LINE_AA)
 
-            cv2.imshow("Data Collection - Press key to select class, SPACE to save", display_frame)
+            cv2.imshow("Data Collection - Press key to capture instantly", display_frame)
 
-            # 키 입력 처리
+            # 키 입력 처리 (논블로킹)
             key = cv2.waitKey(1) & 0xFF
 
             if key == ord('q'):
                 print("\n종료합니다...")
                 break
-            elif key == ord(' '):  # 스페이스바
-                if current_class:
-                    filepath = save_image(frame_bgr, current_class)
-                    counts[current_class] += 1
-                    print(f"✓ 저장: {filepath} ({current_class}) - 총 {counts[current_class]}개")
-                else:
-                    print("⚠ 클래스를 먼저 선택하세요 (f/l/r/g/s/n)")
             elif chr(key).lower() in CLASSES:
-                current_class = CLASSES[chr(key).lower()]
-                print(f"선택된 클래스: {current_class}")
+                class_name = CLASSES[chr(key).lower()]
 
-            time.sleep(0.03)  # 약간의 지연
+                # 중복 저장 방지 (0.1초 이내 같은 키는 무시)
+                current_time = time.time()
+                if class_name in last_save_time:
+                    if current_time - last_save_time[class_name] < 0.1:
+                        continue
+
+                # 즉시 저장
+                filepath = save_image(frame_bgr, class_name)
+                counts[class_name] += 1
+                last_save_time[class_name] = current_time
+
+                # 화면에 저장 확인 표시
+                cv2.putText(display_frame, f"SAVED: {class_name.upper()}",
+                           (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
+                cv2.imshow("Data Collection - Press key to capture instantly", display_frame)
+
+                print(f"✓ 저장: {filepath} ({class_name}) - 총 {counts[class_name]}개")
+
+            time.sleep(0.01)  # 짧은 지연 (더 빠른 반응)
 
     except KeyboardInterrupt:
         print("\n키보드 인터럽트로 종료합니다...")
