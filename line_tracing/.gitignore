@@ -1,0 +1,32 @@
+# 데이터
+data/
+*.jpg
+*.jpeg
+*.png
+
+# 모델 파일
+*.h5
+*.tflite
+*.pb
+*.ckpt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
