@@ -1,0 +1,17 @@
+# Mac M2 최적화 버전
+numpy>=1.21.0
+opencv-python>=4.5.0
+scikit-learn>=1.0.0
+matplotlib>=3.5.0
+
+# TensorFlow (Mac M2용)
+# Apple Silicon의 경우 tensorflow-macos 사용 권장
+# 설치: pip install tensorflow-macos tensorflow-metal
+tensorflow>=2.10.0
+
+# Raspberry Pi 실행용 (선택사항)
+# tflite-runtime>=2.10.0  # Pi에서만 필요
+# RPi.GPIO>=0.7.0  # Pi에서만 필요
+
+# 카메라 (Raspberry Pi에서만 필요)
+# picamera2>=0.3.0  # Pi에서만 필요
