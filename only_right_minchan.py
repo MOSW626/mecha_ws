@@ -6,18 +6,19 @@ import ctypes
 
 # ==================== 제어 파라미터 ====================
 # PD Gains (초음파 모드용)
-Kp_r = 8.5
-Kp_l = 2.0
+Kp_r = 8.3
+Kp_l = 4.0
 
 ref_distance_right = 15.529
-ref_distance_left = 10.0
+ref_distance_left = 15.0
 
 base_angle = 90.0
 
-speed_angle_diff = 0.58
+speed_angle_diff_r = 0.58
+speed_angle_diff_l = 0.2
 
 # 속도 설정
-SPEED_ULTRASONIC = 100
+SPEED_ULTRASONIC = 90.0
 
 # Distance Clipping values
 MIN_CM, MAX_CM = 3.0, 150.0
@@ -79,7 +80,7 @@ def read_stable(trig, echo):
 
 def smooth(prev_value, new_value, alpha=ALPHA):
     if new_value == 8787:
-        return MAX_CM
+        return None
     if new_value is None:
         return prev_value
     if prev_value is None:
@@ -126,38 +127,10 @@ def sensor_process(left_val, right_val, lock):
     last_left = None
     last_right = None
 
-    loop_count = 0
-    t_prev = time.perf_counter()
-    sum_dt = 0.0
-    min_dt = float('inf')
-    max_dt = 0.0
-    PRINT_INTERVAL = 50
-
     try:
-        print("센서 프로세스 시작")
+        print("메인 제어 프로세스 시작")
+
         while True:
-            """
-            t_now = time.perf_counter()
-            dt = t_now - t_prev
-            t_prev = t_now
-
-            if loop_count > 0:
-                sum_dt += dt
-                if dt < min_dt:
-                    min_dt = dt
-                if dt > max_dt:
-                    max_dt = dt
-                if loop_count % PRINT_INTERVAL == 0:
-                    avg_dt = sum_dt / loop_count
-                    print(f"[SENSOR loop {loop_count}] "
-                          f"last={dt*1000:.3f} ms, "
-                          f"avg={avg_dt*1000:.3f} ms, "
-                          f"min={min_dt*1000:.3f} ms, "
-                          f"max={max_dt*1000:.3f} ms")
-
-            loop_count += 1
-            """
-
             raw_left  = read_stable(TRIG_LEFT, ECHO_LEFT)
             raw_right = read_stable(TRIG_RIGHT, ECHO_RIGHT)
 
@@ -171,7 +144,7 @@ def sensor_process(left_val, right_val, lock):
                 right_val.value = float(right) if right is not None else 0.0
 
             # 초음파 센서 보호 + CPU 사용률 조절
-            time.sleep(0.002)  # ≈ 50 Hz 정도
+            time.sleep(0.004)  # ≈ 50 Hz 정도
 
     except KeyboardInterrupt:
         print("센서 프로세스 종료 (KeyboardInterrupt)")
@@ -190,85 +163,84 @@ def main_control(left_val, right_val, lock):
     set_servo_angle(base_angle)
     stop_motor()
 
-    prev_error = 0.0
-
-    loop_count = 0
-    t_prev = time.perf_counter()
-    sum_dt = 0.0
-    min_dt = float('inf')
-    max_dt = 0.0
-    PRINT_INTERVAL = 50
-
     print("메인 제어 프로세스 시작")
+
+    # 모드 상태: 오른쪽 벽 기준(RIGHT) vs 왼쪽 기준(LEFT)
+    mode = 'RIGHT'   # 시작 모드는 상황 보고 바꿔도 됨
+
+    # RIGHT -> LEFT 전환을 위한 임계값과 유지 시간
+    RIGHT_TO_LEFT_THRESH = 60.0        # right가 이 값보다 커야 "이상치"로 판단
+    RIGHT_PERSIST_SEC    = 0.3         # 그 상태가 이 시간 이상 유지되면 전환
+
+    LEFT_TO_RIGHT_THRESH = 30.0        # right가 이 값보다 작아지면 RIGHT로 돌아갈 후보
+
+    # 이상치 시작 시간을 저장하는 변수
+    right_over_start = None   # RIGHT 모드에서 right > thresh인 상태가 처음 발생한 시각
+
+    log = 0
 
     try:
         while True:
-            """
-            t_now = time.perf_counter()
-            dt = t_now - t_prev
-            t_prev = t_now
-
-            if loop_count > 0:
-                sum_dt += dt
-                if dt < min_dt:
-                    min_dt = dt
-                if dt > max_dt:
-                    max_dt = dt
-
-                if loop_count % PRINT_INTERVAL == 0:
-                    avg_dt = sum_dt / loop_count
-                    with lock:
-                        L = left_val.value
-                        R = right_val.value
-                    print(f"[MAIN loop {loop_count}] "
-                          f"last={dt*1000:.3f} ms, "
-                          f"avg={avg_dt*1000:.3f} ms, "
-                          f"min={min_dt*1000:.3f} ms, "
-                          f"max={max_dt*1000:.3f} ms | "
-                          f"L={L:.1f}cm R={R:.1f}cm")
-
-            loop_count += 1
-            """
-            # ---------- 거리 읽기 ----------
             with lock:
                 left  = left_val.value
                 right = right_val.value
 
-            # 초기 몇 루프 동안 0일 수 있으니 건너뜀
             if left <= 0.0 or right <= 0.0:
                 time.sleep(0.001)
                 continue
 
-            if right < 60.0:
-                # ---------- PID 제어 ----------
+            now = time.time()
+
+            if mode == 'RIGHT':
+                # right가 임계값보다 크면 "이상치 구간"으로 본다
+                if right > RIGHT_TO_LEFT_THRESH:
+                    if right_over_start is None:
+                        # 이상치 구간 시작 시간 기록
+                        right_over_start = now
+                    else:
+                        # 일정 시간 이상 계속 이상치 상태면 LEFT로 전환
+                        if (now - right_over_start) > RIGHT_PERSIST_SEC:
+                            mode = 'LEFT'
+                            right_over_start = None  # 리셋
+                            print("MODE SWITCH: RIGHT -> LEFT")
+            else:  # mode == 'LEFT'
+                if right < LEFT_TO_RIGHT_THRESH:
+                    mode = 'RIGHT'
+                    print("MODE SWITCH: LEFT -> RIGHT")
+
+            # ----- 모드별 제어 -----
+            if mode == 'RIGHT':
                 error = ref_distance_right - right
-                print('right : ', error)
                 output = Kp_r * error
-                
+                if log == 20:
+                    print('right : ', error)
+                    log = 0
+                angle_cmd = base_angle - output
+                angle_cmd = max(45.0, min(135.0, angle_cmd))
+
+                speed_cmd = SPEED_ULTRASONIC - speed_angle_diff_r * abs(output)
             else:
                 error = ref_distance_left - left
-                print('left : ', error)
-                output = - Kp_l * error
+                output = Kp_l * error
+                if log == 20:
+                    print('left : ', error)
+                    log = 0
 
-            # 기본 조향각
-            angle_cmd = base_angle - output
-            angle_cmd = max(45.0, min(135.0, angle_cmd))
+                angle_cmd = base_angle - output
+                angle_cmd = max(45.0, min(135.0, angle_cmd))
 
-            # 각도에 따른 속도 설정
-            speed_cmd = SPEED_ULTRASONIC - speed_angle_diff * abs(output)
+                speed_cmd = SPEED_ULTRASONIC - speed_angle_diff_l * abs(output)
+
+            log += 1
 
             if speed_cmd < 0.0:
-                speed_cmd = 0
+                speed_cmd = 0.0
 
             set_servo_angle(angle_cmd)
             move_forward(speed_cmd)
 
-            prev_error = error
-
-                
-
-            # 제어 루프 주기: ≈ 1 ms
             time.sleep(0.001)
+
 
     except KeyboardInterrupt:
         print("메인 제어 종료 (KeyboardInterrupt)")
