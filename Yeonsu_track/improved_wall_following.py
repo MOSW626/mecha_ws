@@ -55,6 +55,12 @@ class ControlParams:
     min_safe_distance = 5.0        # 최소 안전 거리 (cm)
     max_safe_distance = 100.0       # 최대 유효 거리 (cm)
 
+    # 센서 이상치 감지 파라미터
+    max_distance_change = 30.0      # 최대 거리 변화량 (cm) - 급격한 변화 감지
+    min_valid_distance = 3.0        # 최소 유효 거리 (cm)
+    max_valid_distance = 120.0      # 최대 유효 거리 (cm) - 센서 범위 초과 감지
+    sensor_fallback_enabled = True  # 한쪽 센서 이상 시 다른 쪽 사용
+
     # 적분 제한 (Windup 방지)
     integral_max = 50.0
     integral_min = -50.0
@@ -182,6 +188,84 @@ def sample_distance(trig, echo):
 
     dist = (end - start) * 34300.0 / 2.0
     return dist
+
+# ==================== 센서 값 검증 함수 ====================
+def is_valid_sensor_value(value, prev_value=None, max_change=None):
+    """
+    센서 값이 유효한지 검증
+
+    Args:
+        value: 현재 센서 값
+        prev_value: 이전 센서 값 (변화율 체크용)
+        max_change: 최대 허용 변화량
+
+    Returns:
+        (is_valid, reason): (유효 여부, 이유)
+    """
+    if value is None:
+        return False, "None value"
+
+    if value <= 0.0:
+        return False, "Zero or negative"
+
+    # 범위 체크
+    if value < ControlParams.min_valid_distance:
+        return False, f"Too close: {value:.1f}cm"
+
+    if value > ControlParams.max_valid_distance:
+        return False, f"Too far: {value:.1f}cm"
+
+    # 급격한 변화 체크
+    if prev_value is not None and max_change is not None:
+        change = abs(value - prev_value)
+        if change > max_change:
+            return False, f"Sudden change: {change:.1f}cm"
+
+    return True, "OK"
+
+def get_fallback_sensor_value(primary, secondary, prev_primary=None):
+    """
+    주 센서가 이상할 때 보조 센서 값 사용
+
+    Args:
+        primary: 주 센서 값 (현재 모드에서 사용하는 센서)
+        secondary: 보조 센서 값 (다른 쪽 센서)
+        prev_primary: 이전 주 센서 값
+
+    Returns:
+        (use_value, is_fallback, reason): (사용할 값, fallback 사용 여부, 이유)
+    """
+    if not ControlParams.sensor_fallback_enabled:
+        # Fallback 비활성화 시 주 센서만 사용
+        is_valid, reason = is_valid_sensor_value(
+            primary, prev_primary, ControlParams.max_distance_change
+        )
+        if is_valid:
+            return primary, False, "OK"
+        else:
+            return None, False, reason
+
+    # 주 센서 검증
+    is_primary_valid, primary_reason = is_valid_sensor_value(
+        primary, prev_primary, ControlParams.max_distance_change
+    )
+
+    if is_primary_valid:
+        return primary, False, "OK"
+
+    # 주 센서가 이상하면 보조 센서 확인
+    is_secondary_valid, secondary_reason = is_valid_sensor_value(
+        secondary, None, None  # 보조 센서는 변화율 체크 안 함
+    )
+
+    if is_secondary_valid:
+        # 보조 센서를 사용하되, 모드에 맞게 변환
+        # RIGHT 모드에서 right가 이상하면 left 사용
+        # LEFT 모드에서 left가 이상하면 right 사용
+        return secondary, True, f"Using fallback: {primary_reason}"
+
+    # 양쪽 모두 이상
+    return None, False, f"Both invalid: primary={primary_reason}, secondary={secondary_reason}"
 
 # ==================== PID 제어기 클래스 ====================
 class PIDController:
@@ -422,6 +506,11 @@ def main_control(left_val, right_val, lock):
     # 속도 제어를 위한 이전 출력 저장
     prev_output = 0.0
 
+    # 센서 값 추적 (이상치 감지용)
+    prev_left = None
+    prev_right = None
+    fallback_count = 0  # Fallback 사용 횟수 추적
+
     # 로깅 (빈도 감소로 성능 향상)
     log_counter = 0
     log_interval = 100  # 100번마다 출력 (50->100)
@@ -437,13 +526,63 @@ def main_control(left_val, right_val, lock):
                 left = left_val.value
                 right = right_val.value
 
-            # 유효성 검사
-            if left <= 0.0 or right <= 0.0:
-                time.sleep(control_dt)
-                next_control_time += control_dt
-                continue
-
             now = time.time()
+
+            # ========== 센서 값 검증 및 Fallback 처리 ==========
+            if mode == 'RIGHT':
+                # RIGHT 모드: right가 주 센서, left가 보조
+                use_value, is_fallback, reason = get_fallback_sensor_value(
+                    right, left, prev_right
+                )
+
+                if use_value is None:
+                    # 양쪽 모두 이상 - 안전 모드
+                    print(f"[WARNING] Both sensors invalid: {reason}")
+                    speed_cmd = ControlParams.speed_min * 0.5  # 매우 느리게
+                    set_servo_angle(ControlParams.base_angle)  # 직진
+                    move_forward(speed_cmd)
+                    time.sleep(control_dt)
+                    next_control_time += control_dt
+                    continue
+
+                if is_fallback:
+                    fallback_count += 1
+                    if fallback_count == 1 or fallback_count % 20 == 0:
+                        print(f"[FALLBACK] Using left sensor: {reason} (R:{right:.1f}, L:{left:.1f})")
+                    # Fallback 사용 시 right 값을 left로 대체
+                    right = use_value
+                else:
+                    fallback_count = 0  # 정상 복구
+                    right = use_value
+
+                prev_right = right
+            else:  # mode == 'LEFT'
+                # LEFT 모드: left가 주 센서, right가 보조
+                use_value, is_fallback, reason = get_fallback_sensor_value(
+                    left, right, prev_left
+                )
+
+                if use_value is None:
+                    # 양쪽 모두 이상 - 안전 모드
+                    print(f"[WARNING] Both sensors invalid: {reason}")
+                    speed_cmd = ControlParams.speed_min * 0.5  # 매우 느리게
+                    set_servo_angle(ControlParams.base_angle)  # 직진
+                    move_forward(speed_cmd)
+                    time.sleep(control_dt)
+                    next_control_time += control_dt
+                    continue
+
+                if is_fallback:
+                    fallback_count += 1
+                    if fallback_count == 1 or fallback_count % 20 == 0:
+                        print(f"[FALLBACK] Using right sensor: {reason} (L:{left:.1f}, R:{right:.1f})")
+                    # Fallback 사용 시 left 값을 right로 대체
+                    left = use_value
+                else:
+                    fallback_count = 0  # 정상 복구
+                    left = use_value
+
+                prev_left = left
 
             # ========== 모드 전환 로직 (개선) ==========
             if mode == 'RIGHT':
@@ -500,9 +639,10 @@ def main_control(left_val, right_val, lock):
             # 로깅
             log_counter += 1
             if log_counter >= log_interval:
+                fallback_status = f" [FALLBACK:{fallback_count}]" if fallback_count > 0 else ""
                 print(f"[{mode}] L:{left:.1f} R:{right:.1f} "
                       f"Err:{error:.2f} Angle:{angle_cmd:.1f} "
-                      f"Speed:{speed_cmd:.1f}")
+                      f"Speed:{speed_cmd:.1f}{fallback_status}")
                 log_counter = 0
 
             # 고정 주기 제어 (더 정확한 타이밍)
