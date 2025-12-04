@@ -6,23 +6,21 @@ import ctypes
 
 # ==================== 제어 파라미터 ====================
 # PD Gains (초음파 모드용)
-Kp_r = 8.3
-Kp_l = 4.0
+Kp = 8.3
 
-ref_distance_right = 15.529
+ref_distance_right = 20.0
 ref_distance_left = 15.0
 
 base_angle = 90.0
 
-speed_angle_diff_r = 0.58
-speed_angle_diff_l = 0.2
+speed_angle_diff = 0.37
 
 # 속도 설정
-SPEED_ULTRASONIC = 90.0
+SPEED_ULTRASONIC = 100.0
 
 # Distance Clipping values
 MIN_CM, MAX_CM = 3.0, 150.0
-ALPHA = 0.85
+ALPHA = 0.85 #85
 
 # ==================== GPIO 핀 설정 ====================
 # 모터 / 서보
@@ -205,33 +203,31 @@ def main_control(left_val, right_val, lock):
                             print("MODE SWITCH: RIGHT -> LEFT")
             else:  # mode == 'LEFT'
                 if right < LEFT_TO_RIGHT_THRESH:
-                    mode = 'RIGHT'
-                    print("MODE SWITCH: LEFT -> RIGHT")
+                    if right_over_start is None:
+                        right_over_start = now
+                    else:
+                        # 일정 시간 이상 계속 이상치 상태면 LEFT로 전환
+                        if (now - right_over_start) > RIGHT_PERSIST_SEC:
+                            mode = 'RIGHT'
+                            right_over_start = None  # 리셋
+                            print("MODE SWITCH: LEFT -> RIGHT")
 
             # ----- 모드별 제어 -----
             if mode == 'RIGHT':
                 error = ref_distance_right - right
-                output = Kp_r * error
-                if log == 20:
-                    print('right : ', error)
-                    log = 0
-                angle_cmd = base_angle - output
-                angle_cmd = max(45.0, min(135.0, angle_cmd))
-
-                speed_cmd = SPEED_ULTRASONIC - speed_angle_diff_r * abs(output)
+                output = Kp * error
+                
             else:
                 error = ref_distance_left - left
-                output = Kp_l * error
-                if log == 20:
-                    print('left : ', error)
-                    log = 0
+                output = Kp * error
 
-                angle_cmd = base_angle - output
-                angle_cmd = max(45.0, min(135.0, angle_cmd))
 
-                speed_cmd = SPEED_ULTRASONIC - speed_angle_diff_l * abs(output)
+            angle_cmd = base_angle - output
+            angle_cmd = max(45.0, min(135.0, angle_cmd))
 
-            log += 1
+            speed_cmd = SPEED_ULTRASONIC - speed_angle_diff * abs(output)
+
+            print('mode : ', mode, '' 'right : ', right, 'left : ', left, 'angle_cmd : ', angle_cmd, 'speed_cmd : ', speed_cmd)
 
             if speed_cmd < 0.0:
                 speed_cmd = 0.0

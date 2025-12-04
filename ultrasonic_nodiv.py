@@ -49,7 +49,7 @@ def read_stable(trig, echo):
 
 def smooth(prev_value, new_value, alpha=ALPHA):
     if new_value == 8787:
-        return 150
+        return None
     if new_value is None:
         return prev_value
     if prev_value is None:
@@ -87,13 +87,13 @@ def ultrasonic_nodiv():
 
                 if loop_count % PRINT_INTERVAL == 0:
                     avg_dt = sum_dt / loop_count
-                    print(
-                        f"[loop {loop_count}] "
-                        f"last = {dt*1000:.3f} ms, "
-                        f"avg = {avg_dt*1000:.3f} ms, "
-                        f"min = {min_dt*1000:.3f} ms, "
-                        f"max = {max_dt*1000:.3f} ms"
-                    )
+                    # print(
+                    #     f"[loop {loop_count}] "
+                    #     f"last = {dt*1000:.3f} ms, "
+                    #     f"avg = {avg_dt*1000:.3f} ms, "
+                    #     f"min = {min_dt*1000:.3f} ms, "
+                    #     f"max = {max_dt*1000:.3f} ms"
+                    # )
 
             loop_count += 1
             # ================= 루프 본연의 작업 =================
@@ -105,6 +105,8 @@ def ultrasonic_nodiv():
             left = smooth(last_left, raw_left)
             right = smooth(last_right, raw_right)
             last_left, last_right = left, right
+
+            print(f"Left: {left:.2f} cm, Right: {right:.2f} cm")
 
             if left is None or right is None:
                 continue

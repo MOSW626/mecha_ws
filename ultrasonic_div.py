@@ -11,7 +11,7 @@ TRIG_RIGHT = 5
 ECHO_RIGHT = 6
 
 MIN_CM, MAX_CM = 3.0, 150.0
-ALPHA = 0.85
+ALPHA = 0.5
 
 # ------------ 코어 affinity 설정 함수 ------------
 def set_affinity(core_ids):
