@@ -6,21 +6,19 @@ import ctypes
 
 # ==================== 제어 파라미터 ====================
 # PD Gains (초음파 모드용)
-Kp = 7.5
+Kp = 1.2
 
-ref_distance_right = 15.0
-ref_distance_left = 15.0
-
+ref_distance_difference = -12.0
 base_angle = 90.0
 
-speed_angle_diff = 0.4
+speed_angle_diff = 0.6
 
 # 속도 설정
 SPEED_ULTRASONIC = 100.0
 
 # Distance Clipping values
 MIN_CM, MAX_CM = 3.0, 150.0
-ALPHA = 0.7 #85
+ALPHA = 0.5 #85
 
 # ==================== GPIO 핀 설정 ====================
 # 모터 / 서보
@@ -42,14 +40,6 @@ ECHO_RIGHT = 6
 # 전역 PWM 객체 (메인 프로세스에서만 사용)
 motor_pwm = None
 servo_pwm = None
-
-
-
-# RIGHT -> LEFT 전환을 위한 임계값과 유지 시간
-RIGHT_TO_LEFT_THRESH = 70.0        # right가 이 값보다 커야 "이상치"로 판단
-RIGHT_PERSIST_SEC    = 0.1         # 그 상태가 이 시간 이상 유지되면 전환
-
-LEFT_TO_RIGHT_THRESH = 15.0        # right가 이 값보다 작아지면 RIGHT로 돌아갈 후보
 
 # ==================== 코어 affinity 설정 함수 ====================
 def set_affinity(core_ids):
@@ -94,9 +84,8 @@ def smooth(prev_value, new_value, alpha=ALPHA):
 
     if abs(prev_value - new_value) > 50.0:
         return prev_value
-
-    return alpha * new_value + (1.0 - alpha) * prev_value
-
+    else:
+        return alpha * new_value + (1.0 - alpha) * prev_value
 
 # ==================== 모터 / 서보 제어 함수 ====================
 def init_motor_servo():
@@ -148,7 +137,7 @@ def sensor_process(left_val, right_val, lock):
             left  = smooth(last_left, raw_left)
             right = smooth(last_right, raw_right)
 
-            last_left, last_right = left, right
+            last_left, last_right = raw_left, raw_right
 
             # 공유 메모리 갱신
             with lock:
@@ -177,16 +166,6 @@ def main_control(left_val, right_val, lock):
 
     print("메인 제어 프로세스 시작")
 
-    # 모드 상태: 오른쪽 벽 기준(RIGHT) vs 왼쪽 기준(LEFT)
-    mode = 'RIGHT'   # 시작 모드는 상황 보고 바꿔도 됨
-
-    right_decision = 0.0         # 모드 판정용 강한 LPF 값
-    RIGHT_DEC_ALPHA = 0.1       # 결정용은 아주 강하게(과거 95% 유지)
-
-
-    # 이상치 시작 시간을 저장하는 변수
-    right_over_start = None   # RIGHT 모드에서 right > thresh인 상태가 처음 발생한 시각
-
     log = 0
 
     try:
@@ -199,45 +178,8 @@ def main_control(left_val, right_val, lock):
                 time.sleep(0.001)
                 continue
 
-            if right_decision == 0.0:
-                right_decision = right
-            else:
-                right_decision = (1.0 - RIGHT_DEC_ALPHA) * right_decision \
-                                 + RIGHT_DEC_ALPHA * right
-
-            now = time.time()
-
-            if mode == 'RIGHT':
-                # right가 임계값보다 크면 "이상치 구간"으로 본다
-                if right_decision > RIGHT_TO_LEFT_THRESH:
-                    if right_over_start is None:
-                        # 이상치 구간 시작 시간 기록
-                        right_over_start = now
-                    else:
-                        # 일정 시간 이상 계속 이상치 상태면 LEFT로 전환
-                        if (now - right_over_start) > RIGHT_PERSIST_SEC:
-                            mode = 'LEFT'
-                            right_over_start = None  # 리셋
-                            print("MODE SWITCH: RIGHT -> LEFT")
-            else:  # mode == 'LEFT'
-                if right_decision < LEFT_TO_RIGHT_THRESH:
-                    if right_over_start is None:
-                        right_over_start = now
-                    else:
-                        # 일정 시간 이상 계속 이상치 상태면 LEFT로 전환
-                        if (now - right_over_start) > 0.6:
-                            mode = 'RIGHT'
-                            right_over_start = None  # 리셋
-                            print("MODE SWITCH: LEFT -> RIGHT")
-
-            # ----- 모드별 제어 -----
-            if mode == 'RIGHT':
-                error = ref_distance_right - right
-                output = Kp * error
-                
-            else:
-                error = ref_distance_left - left
-                output = - Kp * error * 1.5
+            error = ref_distance_difference - (right - left)
+            output = Kp * error
 
 
             angle_cmd = base_angle - output
@@ -246,7 +188,7 @@ def main_control(left_val, right_val, lock):
             speed_cmd = SPEED_ULTRASONIC - speed_angle_diff * abs(output)
 
             if log == 20:
-                print('mode : ', mode, '' 'right : ', right, 'left : ', left, 'angle_cmd : ', angle_cmd, 'speed_cmd : ', speed_cmd)
+                print('right : ', right, 'left : ', left, 'angle_cmd : ', angle_cmd, 'speed_cmd : ', speed_cmd)
                 log = 0
             
             log += 1
