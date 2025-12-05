@@ -1,0 +1,21 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Frame images (not needed in git)
+**/frame_*.png
+**/frame_*.jpeg
+**/frame_*.jpg
+
+# macOS
+.DS_Store
+**/.DS_Store
+

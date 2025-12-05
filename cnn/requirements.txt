@@ -1,0 +1,10 @@
+# Python 3.13 호환 버전으로 조정
+# tensorflow==2.13.0  # Python 3.13 미지원
+tensorflow>=2.20.0
+opencv-python==4.7.0.72
+numpy<2.0,>=1.22.0  # NumPy 2.x는 OpenCV 4.7.0.72와 호환 안됨
+pandas>=1.4.0
+Pillow>=8.4.0
+protobuf>=3.20.3
+scikit-learn>=1.0.0
+
