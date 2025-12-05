@@ -53,8 +53,8 @@ def main():
 
     # Track consecutive "non" states for backward movement
     non_count = 0
-    MAX_NON_COUNT = 5  # Number of consecutive "non" before backing up
-    BACKUP_SPEED = 10  # Speed for backing up
+    MAX_NON_COUNT = 10  # Number of consecutive "non" before backing up
+    BACKUP_SPEED = 8  # Speed for backing up
     BACKUP_DURATION = 0.4  # Duration to backup (seconds)
 
     try:
