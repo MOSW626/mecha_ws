@@ -55,7 +55,7 @@ def main():
     non_count = 0
     MAX_NON_COUNT = 5  # Number of consecutive "non" before backing up
     BACKUP_SPEED = 10  # Speed for backing up
-    BACKUP_DURATION = 0.2  # Duration to backup (seconds)
+    BACKUP_DURATION = 0.4  # Duration to backup (seconds)
 
     try:
         while True:
