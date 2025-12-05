@@ -1,0 +1,944 @@
+✓ Line found after 1 non frames
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+✓ Line found after 1 non frames
+Direction: right | CV: right | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+✓ Line found after 1 non frames
+Direction: right | CV: right | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+✓ Line found after 1 non frames
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+✓ Line found after 1 non frames
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+^C
+Exiting due to keyboard interrupt...
+✓ Driving module cleaned up
+System shutdown complete
+Exception ignored in: <function PWM.__del__ at 0x7f617a3380>
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 179, in __del__
+  File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 202, in stop
+  File "/usr/lib/python3/dist-packages/lgpio.py", line 1084, in tx_pwm
+TypeError: unsupported operand type(s) for &: 'NoneType' and 'int'
+Exception ignored in: <function PWM.__del__ at 0x7f617a3380>
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 179, in __del__
+  File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 202, in stop
+  File "/usr/lib/python3/dist-packages/lgpio.py", line 1084, in tx_pwm
+TypeError: unsupported operand type(s) for &: 'NoneType' and 'int'
+(mecha) mg1@raspberrypi:~/mecha_ws$ python3 linetracing.py
+⚠ TensorFlow/Keras not available.
+============================================================
+Hybrid Line Tracing (CV + ML)
+CV weight: 0.8, ML weight: 0.2
+============================================================
+
+Initializing modules...
+Looking for ML models...
+  Current directory: /home/mg1/mecha_ws
+  Model directory: /home/mg1/mecha_ws/cnn
+Attempting to load TFLite model: ./cnn/cnn_model.tflite
+⚠ Failed to load TFLite model: Didn't find op for builtin opcode 'FULLY_CONNECTED' version '12'. An older version of this builtin might be supported. Are you using an old TFLite binary with a newer model?
+Registration failed.
+
+✗ No available model file found.
+  Attempted paths:
+    - ./cnn/cnn_model.tflite (exists: True)
+    - /home/mg1/mecha_ws/cnn/cnn_model.tflite (exists: True)
+✗ ML model loading failed. Using CV only without ML.
+✓ Driving module initialized
+✓ All modules initialized
+
+Initializing camera...
+[0:32:24.099334781] [4232]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+[0:32:24.144099691] [4253]  INFO IPAProxy ipa_proxy.cpp:180 Using tuning file /usr/share/libcamera/ipa/rpi/vc4/imx219.json
+[0:32:24.154543240] [4253]  INFO Camera camera_manager.cpp:220 Adding camera '/base/soc/i2c0mux/i2c@1/imx219@10' for pipeline handler rpi/vc4
+[0:32:24.154683163] [4253]  INFO RPI vc4.cpp:440 Registered camera /base/soc/i2c0mux/i2c@1/imx219@10 to Unicam device /dev/media0 and ISP device /dev/media1
+[0:32:24.154810847] [4253]  INFO RPI pipeline_base.cpp:1107 Using configuration file '/usr/share/libcamera/pipeline/rpi/vc4/rpi_apps.yaml'
+[0:32:24.184840734] [4232]  INFO Camera camera.cpp:1215 configuring streams: (0) 640x480-RGB888/sRGB (1) 640x480-SBGGR10_CSI2P/RAW
+[0:32:24.191545857] [4253]  INFO RPI vc4.cpp:615 Sensor: /base/soc/i2c0mux/i2c@1/imx219@10 - Selected sensor format: 640x480-SBGGR10_1X10/RAW - Selected unicam format: 640x480-pBAA/RAW
+✓ Camera initialized
+
+Line tracing started!
+
+Direction: forward | CV: forward | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+  ✓ Line found at angle 75
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+  ✓ Line found at angle 75
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+✓ Line found after 9 non frames
+Direction: left | CV: left | ML: None
+Direction: left | CV: left | ML: None
+Direction: left | CV: left | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+✓ Line found after 1 non frames
+Direction: left | CV: left | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+✓ Line found after 8 non frames
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+✓ Line found after 5 non frames
+Direction: forward | CV: forward | ML: None
+Direction: left | CV: left | ML: None
+Direction: left | CV: left | ML: None
+Direction: left | CV: left | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+✓ Line found after 9 non frames
+Direction: right | CV: right | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+✓ Line found after 7 non frames
+Direction: left | CV: left | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+✓ Line found after 9 non frames
+Direction: right | CV: right | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+✓ Line found after 7 non frames
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+  ✓ Line found at angle 105
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: left | CV: left | ML: None
+Direction: left | CV: left | ML: None
+Direction: left | CV: left | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+✓ Line found after 8 non frames
+Direction: forward | CV: forward | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+  ✓ Line found at angle 75
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+🔴 Red light detected - stopping
+🟢 Green light detected - resuming
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: green | CV: green | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+✓ Line found after 7 non frames
+Direction: left | CV: left | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+✓ Line found after 4 non frames
+Direction: forward | CV: forward | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: left | CV: left | ML: None
+Direction: left | CV: left | ML: None
+Direction: left | CV: left | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+✓ Line found after 3 non frames
+Direction: left | CV: left | ML: None
+Direction: left | CV: left | ML: None
+Direction: left | CV: left | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+✓ Line found after 4 non frames
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: right | CV: right | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+✓ Line found after 2 non frames
+Direction: left | CV: left | ML: None
+Direction: non | CV: non | ML: None | Non: 1/10
+Direction: non | CV: non | ML: None | Non: 2/10
+Direction: non | CV: non | ML: None | Non: 3/10
+Direction: non | CV: non | ML: None | Non: 4/10
+Direction: non | CV: non | ML: None | Non: 5/10
+Direction: non | CV: non | ML: None | Non: 6/10
+Direction: non | CV: non | ML: None | Non: 7/10
+Direction: non | CV: non | ML: None | Non: 8/10
+Direction: non | CV: non | ML: None | Non: 9/10
+⚠ Line lost for 10 frames - backing up to find line
+  Searching for line by rotating...
+  ✓ Line found at angle 75
+✓ Backup complete - resuming line search
+Direction: non | CV: non | ML: None | Non: 0/10
+Direction: left | CV: left | ML: None
+Direction: left | CV: left | ML: None
+Direction: left | CV: left | ML: None
+Direction: left | CV: left | ML: None
+🔴 Red light detected - stopping
+c^C
+Exiting due to keyboard interrupt...
+✓ Driving module cleaned up
