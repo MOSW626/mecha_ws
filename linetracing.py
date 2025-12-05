@@ -1,36 +1,110 @@
 #!/usr/bin/env python3
-# linetracing_ml.py 와 linetracing_cv.py 을 같이 사용.
-# cv 쪽과 ml의 판단 기준을 정하는 변수 설정.
-# 기본값은 cv가 8할로 높게 설정.
+# Main file that combines linetracing_drive.py and linetracing_Judgment.py
+# Combines CV and ML judgments and performs driving.
 
-import sys
-import os
+import time
+from picamera2 import Picamera2
 
-# linetracing_cv와 linetracing_ml 모듈 import
-try:
-    import linetracing_cv
-    import linetracing_ml
-except ImportError as e:
-    print(f"모듈 import 오류: {e}")
-    sys.exit(1)
-
-# ==================== 판단 기준 설정 ====================
-CV_WEIGHT = 0.8  # CV 8할
-ML_WEIGHT = 0.2  # ML 2할
+# Module imports
+import linetracing_cv
+import linetracing_ml
+import linetracing_Judgment
+import linetracing_drive
 
 def main():
-    """하이브리드 라인트레이싱 실행"""
+    """Hybrid line tracing main loop"""
     print("=" * 60)
-    print("하이브리드 라인트레이싱 (CV + ML)")
-    print(f"CV 가중치: {CV_WEIGHT}, ML 가중치: {ML_WEIGHT}")
+    print("Hybrid Line Tracing (CV + ML)")
+    print(f"CV weight: {linetracing_Judgment.CV_WEIGHT}, ML weight: {linetracing_Judgment.ML_WEIGHT}")
     print("=" * 60)
-    print("주의: 이 파일은 linetracing_cv.py와 linetracing_ml.py를")
-    print("통합하여 실행하는 기능을 제공합니다.")
-    print("=" * 60)
-    print("\n현재는 개별 파일을 실행하거나 main.py를 사용하세요.")
-    print("linetracing_cv.py: OpenCV 기반 라인트레이싱")
-    print("linetracing_ml.py: ML 기반 라인트레이싱")
-    print("main.py: 통합 모드 (라인트레이싱 + 주행)")
+
+    # Initialize modules
+    print("\nInitializing modules...")
+    linetracing_cv.init_cv()
+
+    if not linetracing_ml.init_ml():
+        print("✗ ML model loading failed. Using CV only without ML.")
+        use_ml = False
+    else:
+        use_ml = True
+
+    linetracing_drive.init_drive()
+    print("✓ All modules initialized\n")
+
+    # Initialize camera
+    print("Initializing camera...")
+    picam2 = Picamera2()
+    config = picam2.create_preview_configuration(
+        main={"format": "RGB888", "size": (640, 480)}
+    )
+    picam2.configure(config)
+    picam2.start()
+    time.sleep(1)
+    print("✓ Camera initialized\n")
+
+    # Initial settings
+    linetracing_drive.set_servo_angle(90)
+    time.sleep(0.1)
+
+    print("Line tracing started!\n")
+
+    # Waiting for green light state
+    waiting_for_green = False
+
+    try:
+        while True:
+            # Capture frame
+            frame_rgb = picam2.capture_array()
+
+            # CV judgment
+            cv_result = linetracing_cv.judge_cv(frame_rgb)
+
+            # ML judgment
+            ml_result = None
+            if use_ml:
+                ml_result = linetracing_ml.judge_ml(frame_rgb)
+
+            # Combine judgments
+            final_judgment = linetracing_Judgment.combine_judgments(cv_result, ml_result)
+
+            # Handle red light
+            if final_judgment == "red" and not waiting_for_green:
+                print("🔴 Red light detected - stopping")
+                linetracing_drive.drive("red")
+                waiting_for_green = True
+
+            # Waiting for green light
+            if waiting_for_green:
+                if final_judgment == "green":
+                    print("🟢 Green light detected - resuming")
+                    time.sleep(0.5)
+                    waiting_for_green = False
+                else:
+                    # Continue waiting
+                    time.sleep(0.1)
+                    continue
+
+            # Driving control
+            if not waiting_for_green:
+                linetracing_drive.drive(final_judgment)
+
+                # Debug output
+                cv_info = f"CV: {cv_result}" if cv_result else "CV: None"
+                ml_info = f"ML: {ml_result}" if ml_result else "ML: None"
+                print(f"Direction: {final_judgment} | {cv_info} | {ml_info}")
+
+            time.sleep(0.01)
+
+    except KeyboardInterrupt:
+        print("\nExiting due to keyboard interrupt...")
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        linetracing_drive.cleanup_drive()
+        picam2.stop()
+        print("System shutdown complete")
 
 if __name__ == "__main__":
     main()
