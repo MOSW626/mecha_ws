@@ -22,6 +22,15 @@ MAX_LINE_WIDTH = 20
 prev_center_error = 0
 prev_line_angle = 0.0
 
+# PID control settings
+Kp = 0.8  # Proportional gain
+Ki = 0.0  # Integral gain
+Kd = 0.1  # Derivative gain
+
+# PID state variables
+prev_error = 0
+integral = 0
+
 # ==================== Image Processing Functions ====================
 def preprocess_image(frame):
     """Preprocess image (including contrast enhancement)"""
@@ -68,7 +77,7 @@ def detect_line_with_angle(roi):
     line_angle = 0.0
     if bottom_center is not None and top_center is not None:
         # Calculate angle between two points (radians)
-        dy = h * 0.6  # 상단과 하단 사이의 거리
+        dy = h * 0.6  # Distance between top and bottom
         dx = bottom_center - top_center
         line_angle = np.arctan2(dy, dx) * 180.0 / np.pi  # Convert to degrees
         # Normalize to -90 ~ 90 degree range
@@ -97,6 +106,60 @@ def find_line_center(binary, y_pos):
         return None
 
     return center
+
+def calculate_control_output(bottom_center, line_angle, img_center):
+    """
+    Calculate servo angle and center error using PID control.
+
+    Args:
+        bottom_center: Line center at bottom of ROI (pixels)
+        line_angle: Line angle in degrees
+        img_center: Image center x coordinate (pixels)
+
+    Returns:
+        tuple: (servo_angle, center_error) or (None, None) if line not found
+    """
+    global prev_error, integral, prev_center_error, prev_line_angle
+
+    if bottom_center is None:
+        return None, None
+
+    # Calculate center error
+    center_error = bottom_center - img_center
+
+    # Consider line angle for better control
+    # Combine center error with angle-based correction
+    angle_factor = line_angle / 90.0  # Normalize angle to -1 to 1
+    combined_error = center_error + (angle_factor * IMG_WIDTH * 0.1)
+
+    # PID control calculation
+    integral += combined_error
+    integral = max(-100, min(100, integral))  # Limit integral
+    derivative = combined_error - prev_error
+
+    # PID output
+    output = Kp * combined_error + Ki * integral + Kd * derivative
+
+    # Convert error to servo angle
+    # Error range: -img_center ~ +img_center
+    # Angle range: -45 degrees ~ +45 degrees
+    max_error = IMG_WIDTH / 2
+    angle_offset = (output / max_error) * 45  # Max 45 degree rotation
+
+    # Calculate servo angle (90 is center)
+    SERVO_ANGLE_CENTER = 90
+    SERVO_ANGLE_MIN = 45
+    SERVO_ANGLE_MAX = 135
+
+    angle = SERVO_ANGLE_CENTER - angle_offset
+    angle = max(SERVO_ANGLE_MIN, min(SERVO_ANGLE_MAX, angle))
+
+    # Update state variables
+    prev_error = combined_error
+    prev_center_error = center_error
+    prev_line_angle = line_angle
+
+    return angle, center_error
 
 def update_state(bottom_center, line_angle, img_center):
     """Update state variables"""
@@ -194,6 +257,8 @@ def judge_cv(frame_rgb):
 
 def init_cv():
     """Initialize CV module"""
-    global prev_center_error, prev_line_angle
+    global prev_center_error, prev_line_angle, prev_error, integral
     prev_center_error = 0
     prev_line_angle = 0.0
+    prev_error = 0
+    integral = 0

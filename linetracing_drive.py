@@ -73,12 +73,13 @@ def stop_motor():
 
     motor_pwm.ChangeDutyCycle(0)
 
-def drive(direction):
+def drive(direction, angle=None):
     """
     Controls driving based on judgment result.
 
     Args:
         direction: One of "forward", "green", "left", "non", "red", "right"
+        angle: Optional calculated servo angle (degrees). If provided, uses this instead of fixed angles.
     """
     global last_direction
 
@@ -94,8 +95,10 @@ def drive(direction):
 
     elif direction == "green":
         # Green light: continue driving
-        # Maintain previous direction while driving
-        if last_direction == "left":
+        # Use calculated angle if provided, otherwise maintain previous direction
+        if angle is not None:
+            set_servo_angle(angle)
+        elif last_direction == "left":
             set_servo_angle(60)
         elif last_direction == "right":
             set_servo_angle(120)
@@ -104,26 +107,37 @@ def drive(direction):
         move_forward(SPEED_SLOW)
 
     elif direction == "left":
-        # Turn left
-        set_servo_angle(60)
+        # Turn left - use calculated angle if provided
+        if angle is not None:
+            set_servo_angle(angle)
+        else:
+            set_servo_angle(60)
         move_forward(SPEED_SLOW)
         last_direction = "left"
 
     elif direction == "right":
-        # Turn right
-        set_servo_angle(120)
+        # Turn right - use calculated angle if provided
+        if angle is not None:
+            set_servo_angle(angle)
+        else:
+            set_servo_angle(120)
         move_forward(SPEED_SLOW)
         last_direction = "right"
 
     elif direction == "forward":
-        # Go straight
-        set_servo_angle(SERVO_ANGLE_CENTER)
+        # Go straight - use calculated angle if provided
+        if angle is not None:
+            set_servo_angle(angle)
+        else:
+            set_servo_angle(SERVO_ANGLE_CENTER)
         move_forward(SPEED_SLOW)
         last_direction = "forward"
 
     elif direction == "non":
         # No line: proceed slowly maintaining previous direction
-        if last_direction == "left":
+        if angle is not None:
+            set_servo_angle(angle)
+        elif last_direction == "left":
             set_servo_angle(60)
         elif last_direction == "right":
             set_servo_angle(120)
