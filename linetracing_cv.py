@@ -193,37 +193,40 @@ def update_state(bottom_center, line_angle, img_center):
 def detect_traffic_light(frame):
     """Detect traffic light with improved logic for real-world LED lights"""
     h, w = frame.shape[:2]
-    # Use wider ROI for traffic light (top 40% instead of 30%)
-    roi = frame[0:int(h*0.4), :]
+    # Use smaller ROI for traffic light (top 25% only) to avoid interfering with line detection
+    roi = frame[0:int(h*0.25), :]
 
     hsv = cv2.cvtColor(roi, cv2.COLOR_RGB2HSV)
 
-    # For LED traffic lights, use different HSV ranges
-    # Red LED range (broader for LED lights)
-    red_lower1 = np.array([0, 50, 50])  # Lower saturation for LEDs
+    # For LED traffic lights, use more restrictive HSV ranges to avoid false positives
+    # Red LED range (more restrictive to avoid false detection)
+    red_lower1 = np.array([0, 80, 80])  # Higher saturation to avoid false positives
     red_upper1 = np.array([10, 255, 255])
-    red_lower2 = np.array([170, 50, 50])
+    red_lower2 = np.array([170, 80, 80])
     red_upper2 = np.array([180, 255, 255])
     red_mask1 = cv2.inRange(hsv, red_lower1, red_upper1)
     red_mask2 = cv2.inRange(hsv, red_lower2, red_upper2)
     red_mask = cv2.bitwise_or(red_mask1, red_mask2)
 
-    # Green LED range (broader for LED lights)
-    green_lower = np.array([40, 50, 50])  # Lower saturation for LEDs
-    green_upper = np.array([85, 255, 255])  # Wider range
+    # Green LED range (more restrictive)
+    green_lower = np.array([50, 80, 80])  # Higher saturation, narrower range
+    green_upper = np.array([75, 255, 255])  # Narrower range
 
     green_mask = cv2.inRange(hsv, green_lower, green_upper)
 
     # Apply morphological operations to reduce noise
-    kernel = np.ones((3, 3), np.uint8)
+    kernel = np.ones((5, 5), np.uint8)  # Larger kernel for better noise reduction
     red_mask = cv2.morphologyEx(red_mask, cv2.MORPH_CLOSE, kernel)
     green_mask = cv2.morphologyEx(green_mask, cv2.MORPH_CLOSE, kernel)
+    # Remove small noise
+    red_mask = cv2.morphologyEx(red_mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+    green_mask = cv2.morphologyEx(green_mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
 
     red_pixels = cv2.countNonZero(red_mask)
     green_pixels = cv2.countNonZero(green_mask)
 
-    # Lower threshold for LED lights (they're brighter)
-    threshold = 150
+    # Higher threshold to avoid false positives from line or other objects
+    threshold = 300  # Increased from 150 to reduce false positives
 
     # Calculate ratio to determine which is stronger
     total_pixels = red_pixels + green_pixels
@@ -233,20 +236,20 @@ def detect_traffic_light(frame):
     # Red has priority - if red is detected and is significant, return red
     if red_pixels > threshold:
         # If red is significantly stronger than green, return red
-        if red_pixels > green_pixels * 1.3:  # Lower ratio for better detection
+        if red_pixels > green_pixels * 1.5:  # Higher ratio for more certainty
             return 'red'
         # If red is detected but green is also strong, prefer red (safety first)
         elif red_pixels >= green_pixels:
             return 'red'
         # If green is much stronger than red, it might be green
-        elif green_pixels > red_pixels * 2.5:
+        elif green_pixels > red_pixels * 3.0:  # Higher ratio for more certainty
             return 'green'
         else:
             # Ambiguous case - prefer red for safety
             return 'red'
     elif green_pixels > threshold:
         # Only return green if red is not detected or very weak
-        if red_pixels < threshold * 0.4:  # Slightly higher threshold
+        if red_pixels < threshold * 0.3:  # Lower threshold for red interference
             return 'green'
         else:
             # Red is also present, prefer red
