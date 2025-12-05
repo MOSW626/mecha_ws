@@ -126,6 +126,15 @@ def init_ml():
     # Load ML model (Keras first, TFLite if not available)
     model_loaded = False
 
+    # Check absolute paths as well
+    abs_keras_path = os.path.abspath(KERAS_MODEL_PATH)
+    abs_h5_path = os.path.abspath(H5_MODEL_PATH)
+    abs_tflite_path = os.path.abspath(TFLITE_MODEL_PATH)
+
+    print(f"Looking for ML models...")
+    print(f"  Current directory: {os.getcwd()}")
+    print(f"  Model directory: {os.path.abspath(MODEL_DIR)}")
+
     # 1. Try Keras model (.keras first, .h5 if not available)
     if USE_KERAS:
         if os.path.exists(KERAS_MODEL_PATH):
@@ -137,11 +146,29 @@ def init_ml():
                 print("✓ Keras model loaded (.keras)")
             except Exception as e:
                 print(f"⚠ Failed to load .keras model: {e}")
+        elif os.path.exists(abs_keras_path):
+            print(f"Attempting to load Keras model (abs): {abs_keras_path}")
+            try:
+                model = keras.models.load_model(abs_keras_path)
+                use_keras = True
+                model_loaded = True
+                print("✓ Keras model loaded (.keras)")
+            except Exception as e:
+                print(f"⚠ Failed to load .keras model: {e}")
 
         if not model_loaded and os.path.exists(H5_MODEL_PATH):
             print(f"Attempting to load Keras model: {H5_MODEL_PATH}")
             try:
                 model = keras.models.load_model(H5_MODEL_PATH)
+                use_keras = True
+                model_loaded = True
+                print("✓ Keras model loaded (.h5)")
+            except Exception as e:
+                print(f"⚠ Failed to load .h5 model: {e}")
+        elif not model_loaded and os.path.exists(abs_h5_path):
+            print(f"Attempting to load Keras model (abs): {abs_h5_path}")
+            try:
+                model = keras.models.load_model(abs_h5_path)
                 use_keras = True
                 model_loaded = True
                 print("✓ Keras model loaded (.h5)")
@@ -162,15 +189,30 @@ def init_ml():
                 print("✓ TFLite model loaded")
             except Exception as e:
                 print(f"⚠ Failed to load TFLite model: {e}")
+        elif os.path.exists(abs_tflite_path):
+            print(f"Attempting to load TFLite model (abs): {abs_tflite_path}")
+            try:
+                interpreter = tflite.Interpreter(model_path=abs_tflite_path)
+                interpreter.allocate_tensors()
+                inp = interpreter.get_input_details()[0]
+                out = interpreter.get_output_details()[0]
+                use_keras = False
+                model_loaded = True
+                print("✓ TFLite model loaded")
+            except Exception as e:
+                print(f"⚠ Failed to load TFLite model: {e}")
 
     if not model_loaded:
         print("✗ No available model file found.")
         print(f"  Attempted paths:")
         if USE_KERAS:
-            print(f"    - {KERAS_MODEL_PATH}")
-            print(f"    - {H5_MODEL_PATH}")
+            print(f"    - {KERAS_MODEL_PATH} (exists: {os.path.exists(KERAS_MODEL_PATH)})")
+            print(f"    - {abs_keras_path} (exists: {os.path.exists(abs_keras_path)})")
+            print(f"    - {H5_MODEL_PATH} (exists: {os.path.exists(H5_MODEL_PATH)})")
+            print(f"    - {abs_h5_path} (exists: {os.path.exists(abs_h5_path)})")
         if USE_TFLITE:
-            print(f"    - {TFLITE_MODEL_PATH}")
+            print(f"    - {TFLITE_MODEL_PATH} (exists: {os.path.exists(TFLITE_MODEL_PATH)})")
+            print(f"    - {abs_tflite_path} (exists: {os.path.exists(abs_tflite_path)})")
         return False
 
     print(f"Model used: {'Keras' if use_keras else 'TFLite'}")

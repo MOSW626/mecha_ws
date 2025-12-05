@@ -108,10 +108,21 @@ def main():
                         # Stop after backup
                         linetracing_drive.stop_motor()
                         time.sleep(0.1)
+                        # Try rotating slightly left and right to find line
+                        print("  Searching for line by rotating...")
+                        for angle in [75, 105, 90]:  # Left, right, center
+                            linetracing_drive.set_servo_angle(angle)
+                            time.sleep(0.2)
+                            # Check if line found
+                            test_frame = picam2.capture_array()
+                            test_cv = linetracing_cv.judge_cv(test_frame)
+                            if test_cv != "non":
+                                print(f"  ✓ Line found at angle {angle}")
+                                break
                         non_count = 0  # Reset counter after backup
                         print("✓ Backup complete - resuming line search")
                     else:
-                        # Continue with normal non handling
+                        # Continue with normal non handling - slow down more
                         linetracing_drive.drive(final_judgment)
                 else:
                     # Line found - reset non count
