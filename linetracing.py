@@ -51,6 +51,12 @@ def main():
     # Waiting for green light state
     waiting_for_green = False
 
+    # Track consecutive "non" states for backward movement
+    non_count = 0
+    MAX_NON_COUNT = 5  # Number of consecutive "non" before backing up
+    BACKUP_SPEED = 10  # Speed for backing up
+    BACKUP_DURATION = 0.2  # Duration to backup (seconds)
+
     try:
         while True:
             # Capture frame
@@ -72,6 +78,7 @@ def main():
                 print("🔴 Red light detected - stopping")
                 linetracing_drive.drive("red")
                 waiting_for_green = True
+                non_count = 0  # Reset non count
 
             # Waiting for green light
             if waiting_for_green:
@@ -79,6 +86,7 @@ def main():
                     print("🟢 Green light detected - resuming")
                     time.sleep(0.5)
                     waiting_for_green = False
+                    non_count = 0  # Reset non count
                 else:
                     # Continue waiting
                     time.sleep(0.1)
@@ -86,12 +94,37 @@ def main():
 
             # Driving control
             if not waiting_for_green:
-                linetracing_drive.drive(final_judgment)
+                # Handle "non" state - backup if line lost for too long
+                if final_judgment == "non":
+                    non_count += 1
+                    if non_count >= MAX_NON_COUNT:
+                        print(f"⚠ Line lost for {non_count} frames - backing up to find line")
+                        # Stop first
+                        linetracing_drive.stop_motor()
+                        time.sleep(0.1)
+                        # Backup
+                        linetracing_drive.move_backward(BACKUP_SPEED)
+                        time.sleep(BACKUP_DURATION)
+                        # Stop after backup
+                        linetracing_drive.stop_motor()
+                        time.sleep(0.1)
+                        non_count = 0  # Reset counter after backup
+                        print("✓ Backup complete - resuming line search")
+                    else:
+                        # Continue with normal non handling
+                        linetracing_drive.drive(final_judgment)
+                else:
+                    # Line found - reset non count
+                    if non_count > 0:
+                        print(f"✓ Line found after {non_count} non frames")
+                    non_count = 0
+                    linetracing_drive.drive(final_judgment)
 
                 # Debug output
                 cv_info = f"CV: {cv_result}" if cv_result else "CV: None"
                 ml_info = f"ML: {ml_result}" if ml_result else "ML: None"
-                print(f"Direction: {final_judgment} | {cv_info} | {ml_info}")
+                non_info = f" | Non: {non_count}/{MAX_NON_COUNT}" if final_judgment == "non" else ""
+                print(f"Direction: {final_judgment} | {cv_info} | {ml_info}{non_info}")
 
             time.sleep(0.01)
 

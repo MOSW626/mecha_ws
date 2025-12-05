@@ -65,6 +65,15 @@ def move_forward(speed):
     GPIO.output(DIR_PIN, GPIO.HIGH)
     motor_pwm.ChangeDutyCycle(speed)
 
+def move_backward(speed):
+    """Move backward"""
+    global motor_pwm
+    if not initialized or motor_pwm is None:
+        return
+
+    GPIO.output(DIR_PIN, GPIO.LOW)
+    motor_pwm.ChangeDutyCycle(speed)
+
 def stop_motor():
     """Stop"""
     global motor_pwm
