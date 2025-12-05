@@ -171,34 +171,58 @@ def update_state(bottom_center, line_angle, img_center):
         prev_line_angle = line_angle
 
 def detect_traffic_light(frame):
-    """Detect traffic light"""
+    """Detect traffic light with improved logic to prevent red/green confusion"""
     h, w = frame.shape[:2]
     roi = frame[0:int(h*0.3), :]
 
     hsv = cv2.cvtColor(roi, cv2.COLOR_RGB2HSV)
 
-    # Red color range
-    red_lower1 = np.array([0, 50, 50])
+    # Red color range (more restrictive)
+    red_lower1 = np.array([0, 100, 100])
     red_upper1 = np.array([10, 255, 255])
-    red_lower2 = np.array([170, 50, 50])
+    red_lower2 = np.array([170, 100, 100])
     red_upper2 = np.array([180, 255, 255])
     red_mask1 = cv2.inRange(hsv, red_lower1, red_upper1)
     red_mask2 = cv2.inRange(hsv, red_lower2, red_upper2)
     red_mask = cv2.bitwise_or(red_mask1, red_mask2)
 
-    # Green color range
-    green_lower = np.array([40, 50, 50])
-    green_upper = np.array([80, 255, 255])
+    # Green color range (more restrictive)
+    green_lower = np.array([50, 100, 100])
+    green_upper = np.array([70, 255, 255])
     green_mask = cv2.inRange(hsv, green_lower, green_upper)
 
     red_pixels = cv2.countNonZero(red_mask)
     green_pixels = cv2.countNonZero(green_mask)
-    threshold = 100
 
+    # Higher threshold to reduce noise
+    threshold = 200
+
+    # Calculate ratio to determine which is stronger
+    total_pixels = red_pixels + green_pixels
+    if total_pixels < threshold:
+        return None
+
+    # Red has priority - if red is detected and is significant, return red
     if red_pixels > threshold:
-        return 'red'
+        # If red is significantly stronger than green, return red
+        if red_pixels > green_pixels * 1.5:
+            return 'red'
+        # If red is detected but green is also strong, prefer red (safety first)
+        elif red_pixels >= green_pixels:
+            return 'red'
+        # If green is much stronger than red, it might be green
+        elif green_pixels > red_pixels * 2.0:
+            return 'green'
+        else:
+            # Ambiguous case - prefer red for safety
+            return 'red'
     elif green_pixels > threshold:
-        return 'green'
+        # Only return green if red is not detected or very weak
+        if red_pixels < threshold * 0.3:
+            return 'green'
+        else:
+            # Red is also present, prefer red
+            return 'red'
     else:
         return None
 
