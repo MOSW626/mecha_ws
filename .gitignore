@@ -29,3 +29,7 @@ TestResults.xml
 **/frame_*.png
 **/frame_*.jpeg
 **/frame_*.jpg
+
+# Augmented data folder (training/test images - too large for git)
+cnn/augmented_data/
+cnn/data/

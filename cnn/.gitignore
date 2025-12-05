@@ -15,6 +15,10 @@ build/
 **/frame_*.jpeg
 **/frame_*.jpg
 
+# Augmented data folder (training/test images - too large for git)
+augmented_data/
+data/
+
 # macOS
 .DS_Store
 **/.DS_Store
