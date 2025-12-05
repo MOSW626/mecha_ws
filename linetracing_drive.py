@@ -15,7 +15,7 @@ SERVO_MAX_DUTY = 12
 SERVO_MIN_DUTY = 3
 
 # Speed settings
-SPEED_SLOW = 35  # Very slow driving
+SPEED_SLOW = 20  # Very slow driving
 SERVO_ANGLE_CENTER = 90
 SERVO_ANGLE_MAX = 135
 SERVO_ANGLE_MIN = 45
