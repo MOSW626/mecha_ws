@@ -6,19 +6,20 @@ import ctypes
 
 # ==================== 제어 파라미터 ====================
 # PD Gains (초음파 모드용)
-Kp = 1.2
+Kp = 1.5
+Kd = 0.01
 
 ref_distance_difference = -12.0
 base_angle = 90.0
 
-speed_angle_diff = 0.6
+speed_angle_diff = 0.45
 
 # 속도 설정
 SPEED_ULTRASONIC = 100.0
 
 # Distance Clipping values
 MIN_CM, MAX_CM = 3.0, 150.0
-ALPHA = 0.5 #85
+ALPHA = 0.6 #85
 
 # ==================== GPIO 핀 설정 ====================
 # 모터 / 서보
@@ -167,6 +168,7 @@ def main_control(left_val, right_val, lock):
     print("메인 제어 프로세스 시작")
 
     log = 0
+    prev_error = 0
 
     try:
         while True:
@@ -179,8 +181,9 @@ def main_control(left_val, right_val, lock):
                 continue
 
             error = ref_distance_difference - (right - left)
-            output = Kp * error
+            output = Kp * error + Kd * (error - prev_error)
 
+            prev_error = error
 
             angle_cmd = base_angle - output
             angle_cmd = max(45.0, min(135.0, angle_cmd))
