@@ -256,53 +256,32 @@ def detect_traffic_light(frame):
     red_mask = cv2.bitwise_or(red_mask1, red_mask2)
 
     # Green LED range (more restrictive)
-    green_lower = np.array([40, 40, 100])  # Higher saturation, narrower range
-    green_upper = np.array([90, 255, 255])  # Narrower range
+    green_lower = np.array([35, 20, 150])
+    green_upper = np.array([95, 255, 255])
 
     green_mask = cv2.inRange(hsv, green_lower, green_upper)
 
     # Apply morphological operations to reduce noise
     kernel = np.ones((3, 3), np.uint8)  # Larger kernel for better noise reduction
-    red_mask = cv2.morphologyEx(red_mask, cv2.MORPH_CLOSE, kernel)
-    green_mask = cv2.morphologyEx(green_mask, cv2.MORPH_CLOSE, kernel)
-    # Remove small noise
-    red_mask = cv2.morphologyEx(red_mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
-    green_mask = cv2.morphologyEx(green_mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+    # Only Erode once, then Dilate (remove sparkles, keep blobs)
+    red_mask = cv2.erode(red_mask, kernel, iterations=1)
+    red_mask = cv2.dilate(red_mask, kernel, iterations=2)
+
+    green_mask = cv2.erode(green_mask, kernel, iterations=1)
+    green_mask = cv2.dilate(green_mask, kernel, iterations=2)
 
     red_pixels = cv2.countNonZero(red_mask)
     green_pixels = cv2.countNonZero(green_mask)
 
-    # Higher threshold to avoid false positives from line or other objects
-    threshold = 300  # Increased from 150 to reduce false positives
+    threshold = 100 # Lower threshold since we are only detecting the halo
 
-    # Calculate ratio to determine which is stronger
-    total_pixels = red_pixels + green_pixels
-    if total_pixels < threshold:
+    if red_pixels < threshold and green_pixels < threshold:
         return None
 
-    # Red has priority - if red is detected and is significant, return red
-    if red_pixels > threshold:
-        # If red is significantly stronger than green, return red
-        if red_pixels > green_pixels * 1.5:  # Higher ratio for more certainty
-            return 'red'
-        # If red is detected but green is also strong, prefer red (safety first)
-        elif red_pixels >= green_pixels:
-            return 'red'
-        # If green is much stronger than red, it might be green
-        elif green_pixels > red_pixels * 3.0:  # Higher ratio for more certainty
-            return 'green'
-        else:
-            # Ambiguous case - prefer red for safety
-            return 'red'
-    elif green_pixels > threshold:
-        # Only return green if red is not detected or very weak
-        if red_pixels < threshold * 0.3:  # Lower threshold for red interference
-            return 'green'
-        else:
-            # Red is also present, prefer red
-            return 'red'
+    if red_pixels >= green_pixels:
+        return 'red'
     else:
-        return None
+        return 'green'
 
 def judge_direction(bottom_center, line_angle, img_center):
     """Judge left, right, forward, non"""
