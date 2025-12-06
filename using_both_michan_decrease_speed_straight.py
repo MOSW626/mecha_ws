@@ -6,19 +6,19 @@ import ctypes
 
 # ==================== 제어 파라미터 ====================
 # PD Gains (초음파 모드용)
-Kp = 2.2 #1,5
+Kp = 2.6 #1,5
 Kd = 0.0 #0.01
 
 base_angle = 100.0
 
-speed_angle_diff = 0.2 #0.45-
+speed_angle_diff = 0.27 #0.45
 
 # 속도 설정
 SPEED_ULTRASONIC = 100.0
 
 # Distance Clipping values
 MIN_CM, MAX_CM = 3.0, 150.0
-ALPHA = 1.0
+
 # ==================== GPIO 핀 설정 ====================
 # 모터 / 서보
 DIR_PIN   = 16
@@ -44,9 +44,6 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup([TRIG_LEFT, TRIG_RIGHT], GPIO.OUT)
 GPIO.setup([ECHO_LEFT, ECHO_RIGHT], GPIO.IN)
 
-track_data = [{1:'1st_straight'}, {2:'1st_corner_left'}, {3:'2nd_straight'}, {4:'2nd_corner_left'}, 
-              {5:'3rd_straight'}, {6:'3rd_corner_left'}, {7:'4th_corner_right'}, {8:'4th_straight'}, {9:'5th_corner_left'}]
-
 # ==================== 초음파 센서 함수 ====================
 def sample_distance(trig, echo):
     GPIO.output(trig, True)
@@ -56,12 +53,12 @@ def sample_distance(trig, echo):
     t0 = time.time()
     while GPIO.input(echo) == 0:
         if time.time() - t0 > 0.02:   # 20ms 타임아웃
-            return 150.0
+            return 7878
     start = time.time()
 
     while GPIO.input(echo) == 1:
         if time.time() - start > 0.02:
-            return 150.0
+            return 7878
     end = time.time()
 
     dist = (end - start) * 34300.0 / 2.0
@@ -109,23 +106,26 @@ def main_control():
 
     corner_time = None
     straight_time = None
-    corner_thershold = 25.0
+    corner_thershold = 40.0
     corner_time_threshold = 0.2
     straight_time_threshold = 0.2
-    car_track = 1
-    status_before = None
+
+    
     speed_straight_diff = 0.0
-
-    left_corner = 1
-    right_corner = 2
-    straight = 3
-
-    track_change_lock = time.time()
-    track_change_lock_time = 0.2
-
     ref_distance_difference = 0.0
 
+    track_change_lock = time.time()
+    track_change_lock_time = 0.3
+
     straight_continous_time = None
+
+    corner = True
+    straight = False
+
+    status_before = straight
+
+    left_prev  = sample_distance(TRIG_LEFT, ECHO_LEFT)
+    right_prev = sample_distance(TRIG_RIGHT, ECHO_RIGHT)
 
     log = 0
 
@@ -134,80 +134,51 @@ def main_control():
             left  = sample_distance(TRIG_LEFT, ECHO_LEFT)
             right = sample_distance(TRIG_RIGHT, ECHO_RIGHT)
 
+            if left == 7878 or left >= 120.0:
+                left = left_prev
+            else:
+                left_prev = left
+            
+            if right == 7878 or right >= 120.0:
+                right = right_prev
+            else:
+                right_prev = right
+
             difference = right - left
 
             if time.time() - track_change_lock > track_change_lock_time:
-                if difference < -corner_thershold:
+                if abs(difference) > corner_thershold:
                     if corner_time is None:
                         corner_time = time.time()
                     else:
                         if time.time() - corner_time > corner_time_threshold:
                             corner_time = None
                             straight_continous_time = None
-                            if status_before != left_corner:
-                                car_track += 1
-                                if car_track > 9:
-                                    car_track = 1
-                            status_before = left_corner
-
-                            print('left corner detected', 'currnet track:', car_track)
-
-                            track_change_lock = time.time()
-                elif difference > corner_thershold:
-                    if corner_time is None:
-                        corner_time = time.time()
-                    else:
-                        if time.time() - corner_time > corner_time_threshold:
-                            corner_time = None
-                            straight_continous_time = None
-                            
-                            if status_before != right_corner:
-                                car_track = 7 # right corner index
-                            status_before = right_corner
-
-                            print('right corner detected', 'currnet track:', car_track)
+                            speed_straight_diff = 0.0
+                            status_before = corner
+                            print('corner detected')
 
                             track_change_lock = time.time()
                 else:
-                    if status_before == left_corner or status_before == right_corner:
+                    if status_before == corner:
                         if straight_time is None:
                             straight_time = time.time()
                         else:
                             if time.time() - straight_time > straight_time_threshold:
                                 straight_time = None
-                                if status_before != straight:
-                                    car_track += 1
-                                    straight_continous_time = time.time()
-                                    if car_track > 9:
-                                        car_track = 1
+                                straight_continous_time = time.time()
                                 status_before = straight
 
-                                print('straight path detected', 'currnet track:', car_track)
+                                print('straight path detected')
 
                                 track_change_lock = time.time()
 
-
-            # if car_track == 5:
-            #     ref_distance_difference += 0.1
-            # elif car_track == 1 or car_track == 5:
-            #     ref_distance_difference -= 0.1
-            # if car_track == 3:
-            #     # ref_distance_difference -= 0.1
-            #     speed_straight_diff -= 0.2
-            # else:
-            #     ref_distance_difference = 0.0
-            #     speed_straight_diff = 0.0
-
-            # if ref_distance_difference > 10.0:
-            #     ref_distance_difference = 10.0
-            # elif ref_distance_difference < -10.0:
-            #     ref_distance_difference = -10.0
-
             if straight_continous_time is not None:
-                if time.time() - straight_continous_time > 0.5:
+                if time.time() - straight_continous_time > 0.7:
                     speed_straight_diff -= 0.5
-
-            print(left, '\t', right, '\t', 'currnet track:', car_track, '\t', 'speed_straight_diff:', speed_straight_diff)
+                    print('speed down')
+                    if speed_straight_diff < -20.0:
+                        speed_straight_diff = -20.0
 
             error = ref_distance_difference - (right - left)
             output = Kp * error
@@ -215,7 +186,10 @@ def main_control():
             angle_cmd = base_angle - output
             angle_cmd = max(45.0, min(135.0, angle_cmd))
 
-            speed_cmd = SPEED_ULTRASONIC - speed_angle_diff * abs(output) - speed_straight_diff
+            speed_cmd = SPEED_ULTRASONIC - speed_angle_diff * abs(output) + speed_straight_diff
+            
+            print('left:', left, '\t', 'right:', right, '\t',)
+            # print('status_before', status_before, '\t', 'speed_straight_diff', speed_straight_diff, '\t', 'speed_cmd:', speed_cmd)
 
             if speed_cmd < 0.0:
                 speed_cmd = 0.0
@@ -223,11 +197,7 @@ def main_control():
             set_servo_angle(angle_cmd)
             move_forward(speed_cmd)
 
-            # if log == 20:
-            #     print('ref_distance:', ref_distance_difference, 'speed_straight_diff:', speed_straight_diff)
-            #     log = 0
-
-            time.sleep(0.001)
+            time.sleep(0.002)
 
 
     except KeyboardInterrupt:
