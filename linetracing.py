@@ -3,7 +3,10 @@
 # Combines CV and ML judgments and performs driving.
 
 import time
+import argparse
+import os
 from picamera2 import Picamera2
+from PIL import Image
 
 # Module imports
 import linetracing_cv
@@ -13,6 +16,24 @@ import linetracing_drive
 
 def main():
     """Hybrid line tracing main loop"""
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Hybrid Line Tracing (CV + ML)')
+    parser.add_argument('-testcase', type=str, default=None,
+                        help='Test case name for saving captured images (e.g., -testcase test1)')
+    args = parser.parse_args()
+
+    # Setup image capture if testcase is provided
+    capture_enabled = args.testcase is not None
+    frame_counter = 0
+    image_counter = 0
+    CAPTURE_INTERVAL = 20  # Capture every 20 frames
+
+    if capture_enabled:
+        # Ensure line_log directory exists
+        log_dir = "line_log"
+        os.makedirs(log_dir, exist_ok=True)
+        print(f"📸 Image capture enabled: {log_dir}/{args.testcase}_<NUM>.jpg")
+
     print("=" * 60)
     print("Hybrid Line Tracing (CV + ML)")
     print(f"CV weight: {linetracing_Judgment.CV_WEIGHT}, ML weight: {linetracing_Judgment.ML_WEIGHT}")
@@ -72,6 +93,18 @@ def main():
 
             # Combine judgments
             final_judgment = linetracing_Judgment.combine_judgments(cv_result, ml_result)
+
+            # Capture image every 20 frames if testcase is provided
+            if capture_enabled:
+                frame_counter += 1
+                if frame_counter >= CAPTURE_INTERVAL:
+                    frame_counter = 0
+                    image_counter += 1
+                    # Save the frame as image
+                    image = Image.fromarray(frame_rgb)
+                    filename = f"line_log/{args.testcase}_{image_counter:04d}.jpg"
+                    image.save(filename)
+                    print(f"📸 Captured: {filename} (CV: {cv_result}, ML: {ml_result}, Final: {final_judgment})")
 
             # Handle red light
             if final_judgment == "red" and not waiting_for_green:
