@@ -28,9 +28,9 @@ except ImportError:
 # ==================== ML Model Settings ====================
 # Use model from cnn folder (Keras first, TFLite if not available)
 MODEL_DIR = "./cnn"
-KERAS_MODEL_PATH = os.path.join(MODEL_DIR, "cnn_model.keras")
-H5_MODEL_PATH = os.path.join(MODEL_DIR, "cnn_model.h5")
-TFLITE_MODEL_PATH = os.path.join(MODEL_DIR, "cnn_model.tflite")
+KERAS_MODEL_PATH = os.path.join(MODEL_DIR, "cnn_model2.keras")
+H5_MODEL_PATH = os.path.join(MODEL_DIR, "cnn_model2.h5")
+TFLITE_MODEL_PATH = os.path.join(MODEL_DIR, "cnn_model2.tflite")
 
 # Class order of trained model (same as train_model.py)
 LABELS = ["forward", "green", "left", "non", "red", "right"]

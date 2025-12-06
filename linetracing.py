@@ -54,8 +54,8 @@ def main():
     # Track consecutive "non" states for backward movement
     non_count = 0
     MAX_NON_COUNT = 10  # Number of consecutive "non" before backing up
-    BACKUP_SPEED = 8  # Speed for backing up
-    BACKUP_DURATION = 0.4  # Duration to backup (seconds)
+    BACKUP_SPEED = 5  # Speed for backing up
+    BACKUP_DURATION = 0.6  # Duration to backup (seconds)
 
     try:
         while True:
@@ -110,7 +110,7 @@ def main():
                         time.sleep(0.1)
                         # Try rotating slightly left and right to find line
                         print("  Searching for line by rotating...")
-                        for angle in [75, 105, 90]:  # Left, right, center
+                        for angle in [50, 130, 90]:  # Left, right, center
                             linetracing_drive.set_servo_angle(angle)
                             time.sleep(0.2)
                             # Check if line found

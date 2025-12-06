@@ -15,10 +15,10 @@ SERVO_MAX_DUTY = 12
 SERVO_MIN_DUTY = 3
 
 # Speed settings
-SPEED_SLOW = 15  # Very slow driving
+SPEED_SLOW = 10  # Very slow driving
 SERVO_ANGLE_CENTER = 90
-SERVO_ANGLE_MAX = 135
-SERVO_ANGLE_MIN = 45
+SERVO_ANGLE_MAX = 140
+SERVO_ANGLE_MIN = 30
 
 # GPIO control variables
 motor_pwm = None
@@ -108,9 +108,9 @@ def drive(direction, angle=None):
         if angle is not None:
             set_servo_angle(angle)
         elif last_direction == "left":
-            set_servo_angle(60)
+            set_servo_angle(50)
         elif last_direction == "right":
-            set_servo_angle(120)
+            set_servo_angle(130)
         else:
             set_servo_angle(SERVO_ANGLE_CENTER)
         move_forward(SPEED_SLOW)
@@ -120,7 +120,7 @@ def drive(direction, angle=None):
         if angle is not None:
             set_servo_angle(angle)
         else:
-            set_servo_angle(60)
+            set_servo_angle(50)
         move_forward(SPEED_SLOW)
         last_direction = "left"
 
@@ -129,7 +129,7 @@ def drive(direction, angle=None):
         if angle is not None:
             set_servo_angle(angle)
         else:
-            set_servo_angle(120)
+            set_servo_angle(130)
         move_forward(SPEED_SLOW)
         last_direction = "right"
 
@@ -147,9 +147,9 @@ def drive(direction, angle=None):
         if angle is not None:
             set_servo_angle(angle)
         elif last_direction == "left":
-            set_servo_angle(60)
+            set_servo_angle(50)
         elif last_direction == "right":
-            set_servo_angle(120)
+            set_servo_angle(130)
         else:
             set_servo_angle(SERVO_ANGLE_CENTER)
         move_forward(SPEED_SLOW)
