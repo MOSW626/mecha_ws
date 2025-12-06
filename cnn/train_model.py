@@ -34,9 +34,9 @@ BATCH_SIZE = 16  # 이미지 크기가 커졌으므로 배치 크기 감소
 EPOCHS = 100  # 조기 종료로 실제로는 더 적게 학습될 수 있음
 FINE_TUNE_EPOCHS = 30  # Fine-tuning 에포크
 
-MODEL_SAVE_PATH = "cnn_model.h5"
-MODEL_SAVE_PATH_KERAS = "cnn_model.keras"  # 더 안정적인 형식
-TFLITE_SAVE_PATH = "cnn_model.tflite"  # 선택사항: Raspberry Pi에서 사용할 경우
+MODEL_SAVE_PATH = "cnn_model2.h5"
+MODEL_SAVE_PATH_KERAS = "cnn_model2.keras"  # 더 안정적인 형식
+TFLITE_SAVE_PATH = "cnn_model2.tflite"  # 선택사항: Raspberry Pi에서 사용할 경우
 
 def safe_load_model(model_path):
     """안전하게 모델 로드 (손상된 파일 처리)"""
@@ -370,8 +370,8 @@ def plot_history(history, test_accuracy=None, test_loss=None):
         plt.tight_layout()
 
         # 고해상도로 저장
-        plt.savefig('training_history.png', dpi=300, bbox_inches='tight')
-        print("✓ 학습 히스토리 그래프 저장: training_history.png (300 DPI)")
+        plt.savefig('training_history2.png', dpi=300, bbox_inches='tight')
+        print("✓ 학습 히스토리 그래프 저장: training_history2.png (300 DPI)")
 
         # 추가: 간단한 버전도 저장
         fig_simple, axes_simple = plt.subplots(1, 2, figsize=(14, 5))
@@ -399,8 +399,8 @@ def plot_history(history, test_accuracy=None, test_loss=None):
         axes_simple[1].grid(True, alpha=0.3)
 
         plt.tight_layout()
-        plt.savefig('training_history_simple.png', dpi=300, bbox_inches='tight')
-        print("✓ 간단한 학습 히스토리 그래프 저장: training_history_simple.png (300 DPI)")
+        plt.savefig('training_history_simple2.png', dpi=300, bbox_inches='tight')
+        print("✓ 간단한 학습 히스토리 그래프 저장: training_history_simple2.png (300 DPI)")
 
         plt.close('all')
     except Exception as e:
