@@ -116,7 +116,8 @@ def main():
                 if frame_counter >= CAPTURE_INTERVAL:
                     frame_counter = 0
                     image_counter += 1
-                    # Save the original frame
+                    # Save the original frame (frame_rgb is RGB from Picamera2)
+                    # PIL Image expects RGB, so we can use it directly
                     image = Image.fromarray(frame_rgb)
                     filename = f"line_log/{args.testcase}_{image_counter:04d}.jpg"
                     image.save(filename)
@@ -210,7 +211,8 @@ def main():
 
 def create_debug_image(frame_rgb, cv_debug, cv_result, ml_result, final_judgment):
     """Create debug image showing CV processing results"""
-    # Convert RGB to BGR for OpenCV
+    # frame_rgb는 RGB 형식이어야 함 (Picamera2는 RGB 반환)
+    # OpenCV 표시를 위해 BGR로 변환
     frame_bgr = cv2.cvtColor(frame_rgb.copy(), cv2.COLOR_RGB2BGR)
     h_orig, w_orig = frame_bgr.shape[:2]
 

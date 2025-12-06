@@ -14,9 +14,9 @@ ROI_TOP = 0.2  # Wider ROI to reduce non detection (was 0.4)
 ROI_BOTTOM = 1.0
 
 # Line detection settings
-WHITE_THRESHOLD = 180  # Lower threshold to detect more lines (was 200)
-MIN_LINE_WIDTH = 1  # Lower minimum to catch thinner lines (was 2)
-MAX_LINE_WIDTH = 30  # Higher maximum to catch wider lines (was 20)
+WHITE_THRESHOLD = 160  # Lower threshold to detect more lines (was 200)
+MIN_LINE_WIDTH = 5  # Lower minimum to catch thinner lines (was 2)
+MAX_LINE_WIDTH = 200  # Higher maximum to catch wider lines (was 20)
 
 # Control variables (for state maintenance)
 prev_center_error = 0
@@ -93,7 +93,7 @@ def detect_line_with_angle(roi):
         # Calculate angle between two points (radians)
         dy = h * 0.6  # Distance between top and bottom
         dx = bottom_center - top_center
-        line_angle = np.arctan2(dy, dx) * 180.0 / np.pi  # Convert to degrees
+        line_angle = np.arctan2(dx, dy) * 180.0 / np.pi  # Convert to degrees
         # Normalize to -90 ~ 90 degree range
         if line_angle > 90:
             line_angle = line_angle - 180
@@ -163,6 +163,10 @@ def find_line_center(binary, y_pos):
         line_start, line_end = largest_region
         line_width = line_end - line_start
         center = int((line_start + line_end) / 2)
+
+    # --- Debugging print (Optional: Remove after fixing) ---
+    # print(f"Detected Width: {line_width}, Center: {center}")
+    # -----------------------------------------------------
 
     # Check if line width is within acceptable range
     if line_width < MIN_LINE_WIDTH or line_width > MAX_LINE_WIDTH:
@@ -308,14 +312,43 @@ def judge_direction(bottom_center, line_angle, img_center):
     center_error = abs(bottom_center - img_center)
     threshold = IMG_WIDTH * 0.15  # 15% threshold
 
-    if center_error < threshold and abs(line_angle) < 10:
+    # line_angle이 None이거나 계산되지 않은 경우 처리
+    if line_angle is None:
+        line_angle = 0.0
+
+    # 중심 오차와 각도를 고려한 판단
+    # 중심이 가까우면서 각도가 작으면 forward
+    if center_error < threshold and abs(line_angle) < 10:  # 각도 임계값을 10도에서 15도로 완화
         return 'forward'
+    # 중심이 왼쪽에 있으면 left
     elif bottom_center < img_center - threshold:
         return 'left'
+    # 중심이 오른쪽에 있으면 right
     elif bottom_center > img_center + threshold:
         return 'right'
+    # 그 외의 경우 (중심 오차가 threshold 내이지만 각도가 큰 경우)
+    # 각도 방향에 따라 판단
+    elif center_error < threshold:
+        # 각도가 크면 각도 방향으로 판단
+        if line_angle < -5:
+            return 'left'
+        elif line_angle > 5:
+            return 'right'
+        else:
+            return 'forward'
+    # 중심 오차가 threshold보다 크지만 left/right 조건을 만족하지 않는 경우
+    # 각도 정보를 활용
     else:
-        return 'forward'
+        if line_angle < -10:
+            return 'left'
+        elif line_angle > 10:
+            return 'right'
+        else:
+            # 각도 정보가 없거나 작으면 중심 위치로 판단
+            if bottom_center < img_center:
+                return 'left'
+            else:
+                return 'right'
 
 # ==================== Judgment Function ====================
 def judge_cv(frame_rgb, return_debug=False):
