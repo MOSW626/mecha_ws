@@ -5,6 +5,8 @@
 import time
 import argparse
 import os
+import cv2
+import numpy as np
 from picamera2 import Picamera2
 from PIL import Image
 
@@ -83,8 +85,12 @@ def main():
             # Capture frame
             frame_rgb = picam2.capture_array()
 
-            # CV judgment
-            cv_result = linetracing_cv.judge_cv(frame_rgb)
+            # CV judgment (with debug info if capturing)
+            if capture_enabled and frame_counter == CAPTURE_INTERVAL - 1:
+                cv_result, cv_debug = linetracing_cv.judge_cv(frame_rgb, return_debug=True)
+            else:
+                cv_result = linetracing_cv.judge_cv(frame_rgb)
+                cv_debug = None
 
             # ML judgment
             ml_result = None
@@ -100,11 +106,20 @@ def main():
                 if frame_counter >= CAPTURE_INTERVAL:
                     frame_counter = 0
                     image_counter += 1
-                    # Save the frame as image
+                    # Save the original frame
                     image = Image.fromarray(frame_rgb)
                     filename = f"line_log/{args.testcase}_{image_counter:04d}.jpg"
                     image.save(filename)
-                    print(f"📸 Captured: {filename} (CV: {cv_result}, ML: {ml_result}, Final: {final_judgment})")
+
+                    # Save debug image with CV processing results
+                    if cv_debug:
+                        debug_filename = f"line_log/{args.testcase}_{image_counter:04d}_debug.jpg"
+                        debug_img = create_debug_image(frame_rgb, cv_debug, cv_result, ml_result, final_judgment)
+                        debug_image_pil = Image.fromarray(debug_img)
+                        debug_image_pil.save(debug_filename)
+                        print(f"📸 Captured: {filename} + {debug_filename} (CV: {cv_result}, ML: {ml_result}, Final: {final_judgment})")
+                    else:
+                        print(f"📸 Captured: {filename} (CV: {cv_result}, ML: {ml_result}, Final: {final_judgment})")
 
             # Handle red light
             if final_judgment == "red" and not waiting_for_green:
@@ -182,6 +197,68 @@ def main():
         linetracing_drive.cleanup_drive()
         picam2.stop()
         print("System shutdown complete")
+
+def create_debug_image(frame_rgb, cv_debug, cv_result, ml_result, final_judgment):
+    """Create debug image showing CV processing results"""
+    # Convert RGB to BGR for OpenCV
+    frame_bgr = cv2.cvtColor(frame_rgb.copy(), cv2.COLOR_RGB2BGR)
+    h_orig, w_orig = frame_bgr.shape[:2]
+
+    # Resize to match CV processing size
+    img_resized = cv2.resize(frame_bgr, (linetracing_cv.IMG_WIDTH, linetracing_cv.IMG_HEIGHT))
+    h, w = img_resized.shape[:2]
+
+    # Draw ROI rectangle (on resized image)
+    roi_top = int(h * linetracing_cv.ROI_TOP)
+    roi_bottom = h
+    cv2.rectangle(img_resized, (0, roi_top), (w, roi_bottom), (0, 255, 0), 2)
+
+    # Draw line centers if detected
+    if cv_debug.get('bottom_center') is not None:
+        bottom_y = int(roi_top + (roi_bottom - roi_top) * 0.8)
+        cv2.circle(img_resized, (int(cv_debug['bottom_center']), bottom_y), 5, (255, 0, 0), -1)
+        cv2.line(img_resized, (w // 2, bottom_y),
+                (int(cv_debug['bottom_center']), bottom_y), (0, 0, 255), 2)
+
+    if cv_debug.get('top_center') is not None:
+        top_y = int(roi_top + (roi_bottom - roi_top) * 0.2)
+        cv2.circle(img_resized, (int(cv_debug['top_center']), top_y), 5, (0, 255, 255), -1)
+
+    # Draw binary image on the side
+    if cv_debug.get('binary') is not None:
+        binary = cv_debug['binary']
+        # Convert binary to 3-channel for display
+        binary_colored = cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR)
+        # Resize binary to fit on the side
+        binary_h = int(h * 0.3)
+        binary_w = int(binary_colored.shape[1] * binary_h / binary_colored.shape[0])
+        binary_resized = cv2.resize(binary_colored, (binary_w, binary_h))
+        # Place binary image on the right side
+        img_resized[0:binary_h, w-binary_w:w] = binary_resized[:, :min(binary_w, w)]
+
+    # Add text information
+    info_y = 20
+    cv2.putText(img_resized, f"CV: {cv_result}", (10, info_y),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+    cv2.putText(img_resized, f"ML: {ml_result}", (10, info_y + 20),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+    cv2.putText(img_resized, f"Final: {final_judgment}", (10, info_y + 40),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+    if cv_debug.get('bottom_center') is not None:
+        cv2.putText(img_resized, f"Bottom: {cv_debug['bottom_center']:.1f}", (10, info_y + 60),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+    else:
+        cv2.putText(img_resized, "Bottom: None", (10, info_y + 60),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
+
+    if cv_debug.get('line_angle') is not None:
+        cv2.putText(img_resized, f"Angle: {cv_debug['line_angle']:.1f}deg", (10, info_y + 80),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+
+    # Convert back to RGB
+    debug_img_rgb = cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB)
+    return debug_img_rgb
 
 if __name__ == "__main__":
     main()

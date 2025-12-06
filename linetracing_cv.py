@@ -119,9 +119,52 @@ def find_line_center(binary, y_pos):
     if len(white_pixels) == 0:
         return None
 
-    center = int(np.mean(white_pixels))
-    line_width = white_pixels[-1] - white_pixels[0] if len(white_pixels) > 1 else 0
+    # Sort pixels to find continuous regions
+    white_pixels = np.sort(white_pixels)
 
+    # Find the largest continuous white region (line)
+    # Group consecutive pixels
+    if len(white_pixels) == 1:
+        return int(white_pixels[0])
+
+    # Find gaps larger than 5 pixels (likely separate regions)
+    gaps = np.diff(white_pixels)
+    gap_indices = np.where(gaps > 5)[0]
+
+    if len(gap_indices) == 0:
+        # Single continuous region
+        line_start = white_pixels[0]
+        line_end = white_pixels[-1]
+        line_width = line_end - line_start
+        center = int((line_start + line_end) / 2)
+    else:
+        # Multiple regions - find the largest one
+        regions = []
+        start_idx = 0
+        for gap_idx in gap_indices:
+            regions.append((start_idx, gap_idx))
+            start_idx = gap_idx + 1
+        regions.append((start_idx, len(white_pixels) - 1))
+
+        # Find largest region
+        largest_region = None
+        largest_width = 0
+        for start_idx, end_idx in regions:
+            region_start = white_pixels[start_idx]
+            region_end = white_pixels[end_idx]
+            region_width = region_end - region_start
+            if region_width > largest_width:
+                largest_width = region_width
+                largest_region = (region_start, region_end)
+
+        if largest_region is None:
+            return None
+
+        line_start, line_end = largest_region
+        line_width = line_end - line_start
+        center = int((line_start + line_end) / 2)
+
+    # Check if line width is within acceptable range
     if line_width < MIN_LINE_WIDTH or line_width > MAX_LINE_WIDTH:
         return None
 
@@ -275,25 +318,42 @@ def judge_direction(bottom_center, line_angle, img_center):
         return 'forward'
 
 # ==================== Judgment Function ====================
-def judge_cv(frame_rgb):
+def judge_cv(frame_rgb, return_debug=False):
     """
     Analyzes frame using OpenCV and returns judgment result.
 
     Args:
         frame_rgb: Image frame in RGB format (numpy array)
+        return_debug: If True, returns tuple (direction, debug_info)
 
     Returns:
-        str: One of "forward", "green", "left", "non", "red", "right"
+        str or tuple: One of "forward", "green", "left", "non", "red", "right"
+                      If return_debug=True, returns (direction, debug_info dict)
     """
     global prev_center_error, prev_line_angle
 
     img_center = IMG_WIDTH / 2
+    debug_info = {}
 
     # Detect traffic light (priority)
     traffic_light = detect_traffic_light(frame_rgb)
     if traffic_light == 'red':
+        if return_debug:
+            debug_info['traffic_light'] = 'red'
+            debug_info['binary'] = None
+            debug_info['roi'] = None
+            debug_info['bottom_center'] = None
+            debug_info['top_center'] = None
+            return 'red', debug_info
         return 'red'
     elif traffic_light == 'green':
+        if return_debug:
+            debug_info['traffic_light'] = 'green'
+            debug_info['binary'] = None
+            debug_info['roi'] = None
+            debug_info['bottom_center'] = None
+            debug_info['top_center'] = None
+            return 'green', debug_info
         return 'green'
 
     # Preprocess image
@@ -307,6 +367,16 @@ def judge_cv(frame_rgb):
 
     # Update state
     update_state(bottom_center, line_angle, img_center)
+
+    if return_debug:
+        debug_info['traffic_light'] = None
+        debug_info['binary'] = binary
+        debug_info['roi'] = roi
+        debug_info['bottom_center'] = bottom_center
+        debug_info['top_center'] = top_center
+        debug_info['line_angle'] = line_angle
+        debug_info['roi_top'] = roi_top
+        return direction, debug_info
 
     return direction
 
