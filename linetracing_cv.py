@@ -247,9 +247,9 @@ def detect_traffic_light(frame):
 
     # For LED traffic lights, use more restrictive HSV ranges to avoid false positives
     # Red LED range (more restrictive to avoid false detection)
-    red_lower1 = np.array([0, 50, 100])  # Higher saturation to avoid false positives
+    red_lower1 = np.array([0, 40, 200])  # Higher saturation to avoid false positives
     red_upper1 = np.array([10, 255, 255])
-    red_lower2 = np.array([170, 50, 100])
+    red_lower2 = np.array([170, 40, 200])
     red_upper2 = np.array([180, 255, 255])
     red_mask1 = cv2.inRange(hsv, red_lower1, red_upper1)
     red_mask2 = cv2.inRange(hsv, red_lower2, red_upper2)
