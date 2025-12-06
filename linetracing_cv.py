@@ -10,7 +10,7 @@ import numpy as np
 # ==================== Image Processing Settings ====================
 IMG_WIDTH = 320
 IMG_HEIGHT = 240
-ROI_TOP = 0.2  # Wider ROI to reduce non detection (was 0.4)
+ROI_TOP = 0.5  # Wider ROI to reduce non detection (was 0.4)
 ROI_BOTTOM = 1.0
 
 # Line detection settings
@@ -247,17 +247,17 @@ def detect_traffic_light(frame):
 
     # For LED traffic lights, use more restrictive HSV ranges to avoid false positives
     # Red LED range (more restrictive to avoid false detection)
-    red_lower1 = np.array([0, 80, 80])  # Higher saturation to avoid false positives
+    red_lower1 = np.array([0, 50, 100])  # Higher saturation to avoid false positives
     red_upper1 = np.array([10, 255, 255])
-    red_lower2 = np.array([170, 80, 80])
+    red_lower2 = np.array([170, 50, 100])
     red_upper2 = np.array([180, 255, 255])
     red_mask1 = cv2.inRange(hsv, red_lower1, red_upper1)
     red_mask2 = cv2.inRange(hsv, red_lower2, red_upper2)
     red_mask = cv2.bitwise_or(red_mask1, red_mask2)
 
     # Green LED range (more restrictive)
-    green_lower = np.array([50, 80, 80])  # Higher saturation, narrower range
-    green_upper = np.array([75, 255, 255])  # Narrower range
+    green_lower = np.array([40, 40, 100])  # Higher saturation, narrower range
+    green_upper = np.array([90, 255, 255])  # Narrower range
 
     green_mask = cv2.inRange(hsv, green_lower, green_upper)
 
