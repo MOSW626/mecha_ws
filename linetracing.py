@@ -20,8 +20,8 @@ def main():
     """Hybrid line tracing main loop"""
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Hybrid Line Tracing (CV + ML)')
-    parser.add_argument('-testcase', type=str, default=None,
-                        help='Test case name for saving captured images (e.g., -testcase test1)')
+    parser.add_argument('-test', type=str, default=None,
+                        help='Test case name for saving captured images (e.g., -test test1)')
     args = parser.parse_args()
 
     # Setup image capture if testcase is provided
