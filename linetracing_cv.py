@@ -10,7 +10,7 @@ import numpy as np
 # ==================== Image Processing Settings ====================
 IMG_WIDTH = 320
 IMG_HEIGHT = 240
-ROI_TOP = 0.6  # Wider ROI to reduce non detection (was 0.4)
+ROI_TOP = 0.65  # Wider ROI to reduce non detection (was 0.4)
 ROI_BOTTOM = 1.0
 
 # Line detection settings
@@ -238,48 +238,67 @@ def update_state(bottom_center, line_angle, img_center):
         prev_line_angle = line_angle
 
 def detect_traffic_light(frame):
-    """Detect traffic light with improved logic for real-world LED lights"""
+    """
+    Detects traffic lights.
+    Logic: If RED or BLUE is detected -> Return 'red' (STOP).
+           If GREEN is detected -> Return 'green' (GO).
+    """
     h, w = frame.shape[:2]
-    # Use smaller ROI for traffic light (top 25% only) to avoid interfering with line detection
+    # Look at the top 50% to ensure we see the light even when close
     roi = frame[0:int(h*0.5), :]
 
     hsv = cv2.cvtColor(roi, cv2.COLOR_RGB2HSV)
 
-    # For LED traffic lights, use more restrictive HSV ranges to avoid false positives
-    # Red LED range (more restrictive to avoid false detection)
-    red_lower1 = np.array([0, 40, 200])  # Higher saturation to avoid false positives
+    # ==================== 1. STOP SIGNALS (RED + BLUE) ====================
+    # A. Red Ranges (Standard Red)
+    # Value > 150 ensures we are looking for bright lights
+    red_lower1 = np.array([0, 40, 150])
     red_upper1 = np.array([10, 255, 255])
-    red_lower2 = np.array([170, 40, 200])
+    red_lower2 = np.array([170, 40, 150])
     red_upper2 = np.array([180, 255, 255])
-    red_mask1 = cv2.inRange(hsv, red_lower1, red_upper1)
-    red_mask2 = cv2.inRange(hsv, red_lower2, red_upper2)
-    red_mask = cv2.bitwise_or(red_mask1, red_mask2)
 
-    # Green LED range (more restrictive)
-    green_lower = np.array([35, 20, 150])
+    mask_red = cv2.bitwise_or(cv2.inRange(hsv, red_lower1, red_upper1),
+                              cv2.inRange(hsv, red_lower2, red_upper2))
+
+    # B. Blue Ranges (For BGR camera issue)
+    # Hue 100-130 covers standard Blue
+    blue_lower = np.array([100, 40, 150])
+    blue_upper = np.array([130, 255, 255])
+    mask_blue = cv2.inRange(hsv, blue_lower, blue_upper)
+
+    # C. Combine Red and Blue into "Stop Mask"
+    stop_mask = cv2.bitwise_or(mask_red, mask_blue)
+    # ======================================================================
+
+    # ==================== 2. GO SIGNAL (GREEN) ====================
+    # Hue 35-95 (Yellow-Green to Cyan-Green)
+    green_lower = np.array([35, 40, 150])
     green_upper = np.array([95, 255, 255])
-
     green_mask = cv2.inRange(hsv, green_lower, green_upper)
+    # ==============================================================
 
-    # Apply morphological operations to reduce noise
-    kernel = np.ones((3, 3), np.uint8)  # Larger kernel for better noise reduction
-    # Only Erode once, then Dilate (remove sparkles, keep blobs)
-    red_mask = cv2.erode(red_mask, kernel, iterations=1)
-    red_mask = cv2.dilate(red_mask, kernel, iterations=2)
+    # Noise removal (erode noise, dilate to boost light size)
+    kernel = np.ones((3, 3), np.uint8)
+
+    stop_mask = cv2.erode(stop_mask, kernel, iterations=1)
+    stop_mask = cv2.dilate(stop_mask, kernel, iterations=2)
 
     green_mask = cv2.erode(green_mask, kernel, iterations=1)
     green_mask = cv2.dilate(green_mask, kernel, iterations=2)
 
-    red_pixels = cv2.countNonZero(red_mask)
+    # Count pixels
+    stop_pixels = cv2.countNonZero(stop_mask)
     green_pixels = cv2.countNonZero(green_mask)
 
-    threshold = 100 # Lower threshold since we are only detecting the halo
+    # Threshold to avoid random noise
+    threshold = 50
 
-    if red_pixels < threshold and green_pixels < threshold:
+    if stop_pixels < threshold and green_pixels < threshold:
         return None
 
-    if red_pixels >= green_pixels:
-        return 'red'
+    # Logic: If Stop signal (Red or Blue) is stronger than Green -> STOP
+    if stop_pixels >= green_pixels:
+        return 'red'  # We return 'red' string to trigger the stop logic in main code
     else:
         return 'green'
 
