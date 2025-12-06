@@ -50,6 +50,11 @@ def main():
         use_ml = False
     else:
         use_ml = True
+        print("✓ ML model loaded successfully")
+        # Check if model is actually available
+        if linetracing_ml.model is None and linetracing_ml.interpreter is None:
+            print("⚠ Warning: ML model loaded but model/interpreter is None!")
+            use_ml = False
 
     linetracing_drive.init_drive()
     print("✓ All modules initialized\n")
@@ -95,7 +100,12 @@ def main():
             # ML judgment
             ml_result = None
             if use_ml:
-                ml_result = linetracing_ml.judge_ml(frame_rgb)
+                try:
+                    ml_result = linetracing_ml.judge_ml(frame_rgb)
+                except Exception as e:
+                    if frame_counter == 0:  # Only print error once per capture interval
+                        print(f"⚠ ML judgment error: {e}")
+                    ml_result = None
 
             # Combine judgments
             final_judgment = linetracing_Judgment.combine_judgments(cv_result, ml_result)

@@ -62,13 +62,30 @@ def predict_ml(frame_rgb):
         return None, 0.0
 
     try:
-        x = preprocess_frame(frame_rgb)
-
         if use_keras and model is not None:
             # Use Keras model
+            x = preprocess_frame(frame_rgb)
             probs = model.predict(x, verbose=0)[0]
         elif interpreter is not None:
             # Use TFLite model
+            # Check input type and scale
+            input_type = inp['dtype']
+            input_scale = inp.get('quantization_parameters', {}).get('scales', [1.0])[0]
+            input_zero_point = inp.get('quantization_parameters', {}).get('zero_points', [0])[0]
+
+            # Preprocess based on input type
+            img = cv2.resize(frame_rgb, (IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_AREA)
+
+            if input_type == np.uint8:
+                # Quantized model - use uint8
+                img = img.astype(np.uint8)
+                x = img[None, ...]
+            else:
+                # Float model - normalize to [0, 1]
+                img = img.astype(np.float32) / 255.0
+                x = img[None, ...]
+
+            # Set input tensor
             interpreter.set_tensor(inp["index"], x)
             interpreter.invoke()
             probs = interpreter.get_tensor(out["index"])[0]
@@ -81,6 +98,8 @@ def predict_ml(frame_rgb):
         return pred_label, confidence
     except Exception as e:
         print(f"⚠ ML prediction error: {e}")
+        import traceback
+        traceback.print_exc()
         return None, 0.0
 
 # ==================== Judgment Function ====================
@@ -187,8 +206,15 @@ def init_ml():
                 use_keras = False
                 model_loaded = True
                 print("✓ TFLite model loaded")
+                print(f"  Input shape: {inp['shape']}, dtype: {inp['dtype']}")
+                print(f"  Output shape: {out['shape']}, dtype: {out['dtype']}")
+                if 'quantization_parameters' in inp:
+                    quant = inp['quantization_parameters']
+                    print(f"  Input quantization: scale={quant.get('scales', [None])[0]}, zero_point={quant.get('zero_points', [None])[0]}")
             except Exception as e:
                 print(f"⚠ Failed to load TFLite model: {e}")
+                import traceback
+                traceback.print_exc()
         elif os.path.exists(abs_tflite_path):
             print(f"Attempting to load TFLite model (abs): {abs_tflite_path}")
             try:
@@ -199,8 +225,15 @@ def init_ml():
                 use_keras = False
                 model_loaded = True
                 print("✓ TFLite model loaded")
+                print(f"  Input shape: {inp['shape']}, dtype: {inp['dtype']}")
+                print(f"  Output shape: {out['shape']}, dtype: {out['dtype']}")
+                if 'quantization_parameters' in inp:
+                    quant = inp['quantization_parameters']
+                    print(f"  Input quantization: scale={quant.get('scales', [None])[0]}, zero_point={quant.get('zero_points', [None])[0]}")
             except Exception as e:
                 print(f"⚠ Failed to load TFLite model: {e}")
+                import traceback
+                traceback.print_exc()
 
     if not model_loaded:
         print("✗ No available model file found.")
