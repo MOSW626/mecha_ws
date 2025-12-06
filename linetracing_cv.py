@@ -10,7 +10,7 @@ import numpy as np
 # ==================== Image Processing Settings ====================
 IMG_WIDTH = 320
 IMG_HEIGHT = 240
-ROI_TOP = 0.5  # Wider ROI to reduce non detection (was 0.4)
+ROI_TOP = 0.6  # Wider ROI to reduce non detection (was 0.4)
 ROI_BOTTOM = 1.0
 
 # Line detection settings
@@ -95,11 +95,11 @@ def detect_line_with_angle(roi):
         dx = bottom_center - top_center
         line_angle = np.arctan2(dx, dy) * 180.0 / np.pi  # Convert to degrees
         # Normalize to -90 ~ 90 degree range
-        if line_angle > 90:
-            line_angle = line_angle - 180
-        elif line_angle < -90:
-            line_angle = line_angle + 180
-    elif bottom_center is not None:
+        # === FIX 4: Horizontal Glare Rejection ===
+        # If angle is > 60 degrees, it's likely a reflection or light, not a path
+        if abs(line_angle) > 60:
+            return binary, None, None, 0.0 # Return "No Line Found"
+        # =========================================
         # If only bottom exists, maintain previous angle or set to 0
         line_angle = prev_line_angle
 
@@ -241,7 +241,7 @@ def detect_traffic_light(frame):
     """Detect traffic light with improved logic for real-world LED lights"""
     h, w = frame.shape[:2]
     # Use smaller ROI for traffic light (top 25% only) to avoid interfering with line detection
-    roi = frame[0:int(h*0.25), :]
+    roi = frame[0:int(h*0.5), :]
 
     hsv = cv2.cvtColor(roi, cv2.COLOR_RGB2HSV)
 
@@ -262,7 +262,7 @@ def detect_traffic_light(frame):
     green_mask = cv2.inRange(hsv, green_lower, green_upper)
 
     # Apply morphological operations to reduce noise
-    kernel = np.ones((5, 5), np.uint8)  # Larger kernel for better noise reduction
+    kernel = np.ones((3, 3), np.uint8)  # Larger kernel for better noise reduction
     red_mask = cv2.morphologyEx(red_mask, cv2.MORPH_CLOSE, kernel)
     green_mask = cv2.morphologyEx(green_mask, cv2.MORPH_CLOSE, kernel)
     # Remove small noise
