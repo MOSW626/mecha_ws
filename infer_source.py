@@ -20,11 +20,12 @@ def preprocess_frame_for_model(frame):
     Returns: array shaped like interpreter input (including batch dim) with the correct dtype.
     """
     # expected shape and dtype from interpreter
-    expected_shape = inp["shape"]  # e.g. (1, IMG, IMG, C)
+    f = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+    # expected shape and dtype from interpreter
+    expected_shape = inp["shape"]
     expected_c = int(expected_shape[-1])
     expected_dtype = np.dtype(inp["dtype"])
-
-    f = frame.copy()
 
     # normalize channels
     if f.ndim == 2:
