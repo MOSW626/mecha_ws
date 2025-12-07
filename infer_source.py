@@ -7,7 +7,7 @@ from picamera2 import Picamera2
 
 IMG = 240
 model = "./model.tflite"
-labels = ["middle", "green", "left", "red", "right", "noline"]
+labels = ["middle", "green", "left", "right", "red", "noline"]
 
 interpreter = tflite.Interpreter(model_path=model)
 interpreter.allocate_tensors()

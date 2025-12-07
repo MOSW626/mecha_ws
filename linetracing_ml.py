@@ -1,254 +1,94 @@
 #!/usr/bin/env python3
-# Performs line tracing judgment using cnn.tflite file.
-# Processes camera images to find lines and returns judgment results.
-# Returns one of: "forward", "green", "left", "non", "red", "right".
+# linetracing_ml.py
+# infer_source.py의 로직을 이식하여 ML 판단을 수행합니다.
 
 import cv2
 import numpy as np
+import tflite_runtime.interpreter as tflite
 import os
-from collections import Counter
 
-# Keras 모델 지원
-try:
-    import tensorflow as tf
-    from tensorflow import keras
-    USE_KERAS = True
-except ImportError:
-    USE_KERAS = False
-    print("⚠ TensorFlow/Keras not available.")
+# ==================== Settings ====================
+MODEL_PATH = "./model.tflite"
+# infer_source.py에 있던 라벨 순서 그대로 사용
+LABELS = ["middle", "green", "left", "right", "red", "noline"]
 
-# TFLite 모델 지원 (Keras가 없을 때 사용)
-try:
-    import tflite_runtime.interpreter as tflite
-    USE_TFLITE = True
-except ImportError:
-    USE_TFLITE = False
-    print("⚠ TFLite not available.")
-
-# ==================== ML Model Settings ====================
-# Use model from cnn folder (Keras first, TFLite if not available)
-MODEL_DIR = "./cnn"
-KERAS_MODEL_PATH = os.path.join(MODEL_DIR, "cnn_model2.keras")
-H5_MODEL_PATH = os.path.join(MODEL_DIR, "cnn_model2.h5")
-TFLITE_MODEL_PATH = os.path.join(MODEL_DIR, "cnn_model2.tflite")
-
-# Class order of trained model (same as train_model.py)
-LABELS = ["forward", "green", "left", "non", "red", "right"]
-IMG_SIZE = 256  # Image size used during training
-
-# ML related variables
-model = None  # Keras model
-interpreter = None  # TFLite interpreter
+interpreter = None
 inp = None
 out = None
-use_keras = False  # True for Keras, False for TFLite
-
-# Buffer for prediction stabilization
-prediction_buffer = []
-buffer_size = 3
-
-# ==================== ML Image Processing Functions ====================
-def preprocess_frame(frame_rgb):
-    """Preprocess image for ML"""
-    img = cv2.resize(frame_rgb, (IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_AREA)
-    img = img.astype(np.float32) / 255.0
-    return img[None, ...]
-
-def predict_ml(frame_rgb):
-    """Predict using ML model"""
-    global model, interpreter, inp, out, use_keras
-
-    if model is None and interpreter is None:
-        return None, 0.0
-
-    try:
-        if use_keras and model is not None:
-            # Use Keras model
-            x = preprocess_frame(frame_rgb)
-            probs = model.predict(x, verbose=0)[0]
-        elif interpreter is not None:
-            # Use TFLite model
-            # Check input type and scale
-            input_type = inp['dtype']
-            input_scale = inp.get('quantization_parameters', {}).get('scales', [1.0])[0]
-            input_zero_point = inp.get('quantization_parameters', {}).get('zero_points', [0])[0]
-
-            # Preprocess based on input type
-            img = cv2.resize(frame_rgb, (IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_AREA)
-
-            if input_type == np.uint8:
-                # Quantized model - use uint8
-                img = img.astype(np.uint8)
-                x = img[None, ...]
-            else:
-                # Float model - normalize to [0, 1]
-                img = img.astype(np.float32) / 255.0
-                x = img[None, ...]
-
-            # Set input tensor
-            interpreter.set_tensor(inp["index"], x)
-            interpreter.invoke()
-            probs = interpreter.get_tensor(out["index"])[0]
-        else:
-            return None, 0.0
-
-        pred_id = int(np.argmax(probs))
-        pred_label = LABELS[pred_id]
-        confidence = float(probs[pred_id])
-        return pred_label, confidence
-    except Exception as e:
-        print(f"⚠ ML prediction error: {e}")
-        import traceback
-        traceback.print_exc()
-        return None, 0.0
-
-# ==================== Judgment Function ====================
-def judge_ml(frame_rgb):
-    """
-    Analyzes frame using ML model and returns judgment result.
-
-    Args:
-        frame_rgb: Image frame in RGB format (numpy array)
-
-    Returns:
-        str: One of "forward", "green", "left", "non", "red", "right"
-    """
-    global prediction_buffer
-
-    if model is None and interpreter is None:
-        return None
-
-    # ML prediction
-    pred_label, confidence = predict_ml(frame_rgb)
-
-    if pred_label is None:
-        return None
-
-    # Add to prediction buffer
-    prediction_buffer.append(pred_label)
-    if len(prediction_buffer) > buffer_size:
-        prediction_buffer.pop(0)
-
-    # Select most common prediction from buffer
-    if len(prediction_buffer) > 0:
-        most_common = Counter(prediction_buffer).most_common(1)[0][0]
-        return most_common
-
-    return pred_label
 
 def init_ml():
-    """Initialize and load ML model"""
-    global model, interpreter, inp, out, use_keras, prediction_buffer
+    """ML 모델을 로드하고 초기화합니다."""
+    global interpreter, inp, out
 
-    prediction_buffer = []
-
-    # Load ML model (Keras first, TFLite if not available)
-    model_loaded = False
-
-    # Check absolute paths as well
-    abs_keras_path = os.path.abspath(KERAS_MODEL_PATH)
-    abs_h5_path = os.path.abspath(H5_MODEL_PATH)
-    abs_tflite_path = os.path.abspath(TFLITE_MODEL_PATH)
-
-    print(f"Looking for ML models...")
-    print(f"  Current directory: {os.getcwd()}")
-    print(f"  Model directory: {os.path.abspath(MODEL_DIR)}")
-
-    # 1. Try Keras model (.keras first, .h5 if not available)
-    if USE_KERAS:
-        if os.path.exists(KERAS_MODEL_PATH):
-            print(f"Attempting to load Keras model: {KERAS_MODEL_PATH}")
-            try:
-                model = keras.models.load_model(KERAS_MODEL_PATH)
-                use_keras = True
-                model_loaded = True
-                print("✓ Keras model loaded (.keras)")
-            except Exception as e:
-                print(f"⚠ Failed to load .keras model: {e}")
-        elif os.path.exists(abs_keras_path):
-            print(f"Attempting to load Keras model (abs): {abs_keras_path}")
-            try:
-                model = keras.models.load_model(abs_keras_path)
-                use_keras = True
-                model_loaded = True
-                print("✓ Keras model loaded (.keras)")
-            except Exception as e:
-                print(f"⚠ Failed to load .keras model: {e}")
-
-        if not model_loaded and os.path.exists(H5_MODEL_PATH):
-            print(f"Attempting to load Keras model: {H5_MODEL_PATH}")
-            try:
-                model = keras.models.load_model(H5_MODEL_PATH)
-                use_keras = True
-                model_loaded = True
-                print("✓ Keras model loaded (.h5)")
-            except Exception as e:
-                print(f"⚠ Failed to load .h5 model: {e}")
-        elif not model_loaded and os.path.exists(abs_h5_path):
-            print(f"Attempting to load Keras model (abs): {abs_h5_path}")
-            try:
-                model = keras.models.load_model(abs_h5_path)
-                use_keras = True
-                model_loaded = True
-                print("✓ Keras model loaded (.h5)")
-            except Exception as e:
-                print(f"⚠ Failed to load .h5 model: {e}")
-
-    # 2. Try TFLite model (when Keras is not available)
-    if not model_loaded and USE_TFLITE:
-        if os.path.exists(TFLITE_MODEL_PATH):
-            print(f"Attempting to load TFLite model: {TFLITE_MODEL_PATH}")
-            try:
-                interpreter = tflite.Interpreter(model_path=TFLITE_MODEL_PATH)
-                interpreter.allocate_tensors()
-                inp = interpreter.get_input_details()[0]
-                out = interpreter.get_output_details()[0]
-                use_keras = False
-                model_loaded = True
-                print("✓ TFLite model loaded")
-                print(f"  Input shape: {inp['shape']}, dtype: {inp['dtype']}")
-                print(f"  Output shape: {out['shape']}, dtype: {out['dtype']}")
-                if 'quantization_parameters' in inp:
-                    quant = inp['quantization_parameters']
-                    print(f"  Input quantization: scale={quant.get('scales', [None])[0]}, zero_point={quant.get('zero_points', [None])[0]}")
-            except Exception as e:
-                print(f"⚠ Failed to load TFLite model: {e}")
-                import traceback
-                traceback.print_exc()
-        elif os.path.exists(abs_tflite_path):
-            print(f"Attempting to load TFLite model (abs): {abs_tflite_path}")
-            try:
-                interpreter = tflite.Interpreter(model_path=abs_tflite_path)
-                interpreter.allocate_tensors()
-                inp = interpreter.get_input_details()[0]
-                out = interpreter.get_output_details()[0]
-                use_keras = False
-                model_loaded = True
-                print("✓ TFLite model loaded")
-                print(f"  Input shape: {inp['shape']}, dtype: {inp['dtype']}")
-                print(f"  Output shape: {out['shape']}, dtype: {out['dtype']}")
-                if 'quantization_parameters' in inp:
-                    quant = inp['quantization_parameters']
-                    print(f"  Input quantization: scale={quant.get('scales', [None])[0]}, zero_point={quant.get('zero_points', [None])[0]}")
-            except Exception as e:
-                print(f"⚠ Failed to load TFLite model: {e}")
-                import traceback
-                traceback.print_exc()
-
-    if not model_loaded:
-        print("✗ No available model file found.")
-        print(f"  Attempted paths:")
-        if USE_KERAS:
-            print(f"    - {KERAS_MODEL_PATH} (exists: {os.path.exists(KERAS_MODEL_PATH)})")
-            print(f"    - {abs_keras_path} (exists: {os.path.exists(abs_keras_path)})")
-            print(f"    - {H5_MODEL_PATH} (exists: {os.path.exists(H5_MODEL_PATH)})")
-            print(f"    - {abs_h5_path} (exists: {os.path.exists(abs_h5_path)})")
-        if USE_TFLITE:
-            print(f"    - {TFLITE_MODEL_PATH} (exists: {os.path.exists(TFLITE_MODEL_PATH)})")
-            print(f"    - {abs_tflite_path} (exists: {os.path.exists(abs_tflite_path)})")
+    if not os.path.exists(MODEL_PATH):
+        print(f"✗ ML Model not found: {MODEL_PATH}")
         return False
 
-    print(f"Model used: {'Keras' if use_keras else 'TFLite'}")
-    print(f"Image size: {IMG_SIZE}x{IMG_SIZE}")
-    print(f"Classes: {LABELS}")
-    return True
+    try:
+        interpreter = tflite.Interpreter(model_path=MODEL_PATH)
+        interpreter.allocate_tensors()
+        inp = interpreter.get_input_details()[0]
+        out = interpreter.get_output_details()[0]
+        print("✓ TFLite model loaded successfully (infer_source logic)")
+        return True
+    except Exception as e:
+        print(f"⚠ ML Init Error: {e}")
+        return False
+
+def preprocess_frame_for_model(frame_rgb):
+    """
+    infer_source.py의 전처리 로직을 그대로 사용합니다.
+    frame_rgb: Picamera2에서 받은 RGB 이미지 (H, W, 3)
+    """
+    global inp
+
+    # [중요] Picamera2는 RGB를 주지만, 모델 학습이 BGR(OpenCV)로 되었다면 변환 필요
+    # infer_source.py에서 성공했던 핵심 포인트입니다.
+    f = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
+
+    expected_shape = inp["shape"]
+    expected_c = int(expected_shape[-1])
+    expected_dtype = np.dtype(inp["dtype"])
+
+    # Resize to model spatial size
+    f = cv2.resize(f, (expected_shape[2], expected_shape[1]), interpolation=cv2.INTER_AREA)
+
+    # Convert to correct dtype and scaling
+    # infer_source.py 로직: float32 모델이면 255로 나눔
+    if expected_dtype == np.uint8:
+        out_img = (f).astype(np.uint8)
+    else:
+        out_img = (f.astype(np.float32) / 255.0).astype(np.float32)
+
+    # Add batch dim
+    return out_img[None, ...]
+
+def judge_ml(frame_rgb):
+    """
+    이미지를 받아 ML 추론 후 라벨(문자열)을 반환합니다.
+    """
+    global interpreter, inp, out, LABELS
+
+    if interpreter is None:
+        return None
+
+    try:
+        # 전처리
+        x = preprocess_frame_for_model(frame_rgb)
+
+        # 추론 수행
+        interpreter.set_tensor(inp["index"], x)
+        interpreter.invoke()
+
+        probs = interpreter.get_tensor(out["index"])[0]
+        pred_id = int(np.argmax(probs))
+        pred_label = LABELS[pred_id]
+
+        # 디버깅용 출력 (필요시 주석 처리)
+        # print(f"ML Output: {pred_label} (prob: {probs[pred_id]:.2f})")
+
+        return pred_label
+
+    except Exception as e:
+        print(f"⚠ ML Prediction Error: {e}")
+        return None

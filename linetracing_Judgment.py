@@ -1,56 +1,29 @@
 #!/usr/bin/env python3
-# Combines judgments from linetracing_ml.py and linetracing_cv.py to make final judgment.
-# Combines CV and ML judgment results using weights.
+# linetracing_Judgment.py
 
-# ==================== Judgment Criteria Settings ====================
-CV_WEIGHT = 0.8  # CV 80%
-ML_WEIGHT = 0.2  # ML 20%
-
-# Possible judgment results
-VALID_LABELS = ["forward", "green", "left", "non", "red", "right"]
-
-def combine_judgments(cv_result, ml_result, cv_weight=None, ml_weight=None):
+def combine_judgments(cv_result, ml_result):
     """
-    Combines CV and ML judgment results to return final judgment.
-
-    Args:
-        cv_result: CV judgment result (one of "forward", "green", "left", "non", "red", "right")
-        ml_result: ML judgment result (one of "forward", "green", "left", "non", "red", "right")
-        cv_weight: CV weight (default: CV_WEIGHT)
-        ml_weight: ML weight (default: ML_WEIGHT)
-
-    Returns:
-        str: Final judgment result (one of "forward", "green", "left", "non", "red", "right")
+    ML이 Red/Green을 감지하면 그것을 따르고,
+    그렇지 않으면(주행 관련) 무조건 CV 결과를 따릅니다.
     """
-    if cv_weight is None:
-        cv_weight = CV_WEIGHT
-    if ml_weight is None:
-        ml_weight = ML_WEIGHT
 
-    # Traffic lights have high priority (red > green > others)
-    if cv_result == "red" or ml_result == "red":
+    # 1. ML이 명확하게 'red'나 'green'이라고 하면 최우선 반영
+    if ml_result == "red":
         return "red"
-    if cv_result == "green" or ml_result == "green":
+    if ml_result == "green":
         return "green"
 
-    # If both are None, return non
-    if cv_result is None and ml_result is None:
-        return "non"
-
-    # If only one is None, return the other
-    if cv_result is None:
-        return ml_result
-    if ml_result is None:
+    # 2. 그 외의 경우 (ML이 left, right, middle, noline 이라 하더라도)
+    # 정밀한 주행은 CV가 더 잘하므로 CV 결과를 신뢰함
+    if cv_result is not None:
         return cv_result
 
-    # If both have same result, return as is
-    if cv_result == ml_result:
-        return cv_result
-
-    # Weight-based selection
-    # When CV and ML differ, select the one with higher weight
-    if cv_weight >= ml_weight:
-        return cv_result
-    else:
+    # 3. CV도 놓쳤는데 ML이 방향을 가리키는 경우 (예비책)
+    # 필요 없다면 삭제하고 'non' 리턴해도 됨
+    if ml_result in ["left", "right"]:
         return ml_result
 
+    if ml_result == "middle":
+        return "forward"
+
+    return "non"
