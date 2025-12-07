@@ -68,7 +68,9 @@ def map_to_order(pred_label):
 def main():
     picam2 = Picamera2()
     # request an easy preview size; libcamera may pick a closest supported format
-    picam2.configure(picam2.create_preview_configuration({"main":{"size":(640,480)}}))
+    # picam2.configure(picam2.create_preview_configuration({"main":{"size":(640,480)}}))
+    config = picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"})
+    picam2.configure(config)
     picam2.start()
 
     try:
