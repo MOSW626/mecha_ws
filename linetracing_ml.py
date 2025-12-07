@@ -34,59 +34,63 @@ def init_ml():
     except Exception as e:
         print(f"⚠ ML Init Error: {e}")
         return False
+# linetracing_ml.py 수정
 
 def preprocess_frame_for_model(frame_rgb):
     """
-    infer_source.py의 전처리 로직을 그대로 사용합니다.
-    frame_rgb: Picamera2에서 받은 RGB 이미지 (H, W, 3)
+    이미지의 상단 60%만 잘라서 모델에 넣습니다.
+    (바닥에 있는 흰색 라인을 신호등으로 착각하는 것 방지)
     """
     global inp
 
-    # [중요] Picamera2는 RGB를 주지만, 모델 학습이 BGR(OpenCV)로 되었다면 변환 필요
-    # infer_source.py에서 성공했던 핵심 포인트입니다.
-    f = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
+    # 1. 이미지 자르기 (ROI)
+    h, w, c = frame_rgb.shape
+    # 상단 0% ~ 60%까지만 사용 (필요에 따라 0.5 ~ 0.7로 조절)
+    roi_h = int(h * 0.6)
+    frame_cropped = frame_rgb[0:roi_h, :]
 
+    # 2. BGR 변환 (infer_source 방식 유지)
+    f = cv2.cvtColor(frame_cropped, cv2.COLOR_RGB2BGR)
+
+    # 3. 모델 입력 크기에 맞춰 리사이즈
     expected_shape = inp["shape"]
-    expected_c = int(expected_shape[-1])
-    expected_dtype = np.dtype(inp["dtype"])
-
-    # Resize to model spatial size
     f = cv2.resize(f, (expected_shape[2], expected_shape[1]), interpolation=cv2.INTER_AREA)
 
-    # Convert to correct dtype and scaling
-    # infer_source.py 로직: float32 모델이면 255로 나눔
+    # ... (이하 동일: 정규화 및 배치 차원 추가) ...
+    expected_dtype = np.dtype(inp["dtype"])
     if expected_dtype == np.uint8:
         out_img = (f).astype(np.uint8)
     else:
         out_img = (f.astype(np.float32) / 255.0).astype(np.float32)
 
-    # Add batch dim
     return out_img[None, ...]
+# linetracing_ml.py 수정
+
+# [설정 추가] 0.0 ~ 1.0 사이. 0.8 추천 (80% 이상 확실할 때만 인정)
+CONFIDENCE_THRESHOLD = 0.8
 
 def judge_ml(frame_rgb):
-    """
-    이미지를 받아 ML 추론 후 라벨(문자열)을 반환합니다.
-    """
     global interpreter, inp, out, LABELS
 
     if interpreter is None:
         return None
 
     try:
-        # 전처리
         x = preprocess_frame_for_model(frame_rgb)
-
-        # 추론 수행
         interpreter.set_tensor(inp["index"], x)
         interpreter.invoke()
 
         probs = interpreter.get_tensor(out["index"])[0]
         pred_id = int(np.argmax(probs))
+        confidence = probs[pred_id]  # 가장 높은 확률값 가져오기
+
+        # [수정된 부분] 확률이 낮으면 무시하고 None(또는 noline) 리턴
+        if confidence < CONFIDENCE_THRESHOLD:
+            # 디버깅용: 낮은 확률로 감지된 것은 무엇인지 확인
+            # print(f"Ignored low confidence: {LABELS[pred_id]} ({confidence:.2f})")
+            return "noline"
+
         pred_label = LABELS[pred_id]
-
-        # 디버깅용 출력 (필요시 주석 처리)
-        # print(f"ML Output: {pred_label} (prob: {probs[pred_id]:.2f})")
-
         return pred_label
 
     except Exception as e:

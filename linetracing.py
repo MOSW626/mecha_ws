@@ -88,6 +88,10 @@ def main():
     MAX_NON_COUNT = 10  # Number of consecutive "non" before backing up
     BACKUP_SPEED = 5  # Speed for backing up
     BACKUP_DURATION = 0.6  # Duration to backup (seconds)
+    # (변수 초기화 부분에 추가)
+    consecutive_red_count = 0
+    consecutive_green_count = 0
+    DETECTION_REQUIREMENT = 3  # 3프레임 연속 감지되어야 인정
 
     try:
         while True:
@@ -112,7 +116,35 @@ def main():
                     ml_result = None
 
             # Combine judgments
-            final_judgment = linetracing_Judgment.combine_judgments(cv_result, ml_result)
+            raw_judgment = linetracing_Judgment.combine_judgments(cv_result, ml_result)
+            final_judgment = raw_judgment # 기본값
+
+            # [필터링 로직 추가]
+            # Red/Green이 떴을 때 바로 반응하지 않고 카운트
+            if raw_judgment == "red":
+                consecutive_red_count += 1
+            else:
+                consecutive_red_count = 0 # 끊기면 리셋
+
+            if raw_judgment == "green":
+                consecutive_green_count += 1
+            else:
+                consecutive_green_count = 0
+
+            # Red 판단: 연속 3번 이상 떴을 때만 진짜 Red로 확정
+            if consecutive_red_count >= DETECTION_REQUIREMENT:
+                final_judgment = "red"
+            elif consecutive_green_count >= DETECTION_REQUIREMENT:
+                final_judgment = "green"
+            # Red 판단: 연속 3번 이상 떴을 때만 진짜 Red로 확정
+            if consecutive_red_count >= DETECTION_REQUIREMENT:
+                final_judgment = "red"
+            elif consecutive_green_count >= DETECTION_REQUIREMENT:
+                final_judgment = "green"
+            else:
+                # [중요 변경] ML이 Red/Green 확정이 아니라면,
+                # ML이 Left/Right라고 떠들어도 무시하고 무조건 CV 주행 결과를 따릅니다.
+                final_judgment = cv_result if cv_result is not None else "non"
 
             # Capture image every 20 frames if testcase is provided
             if capture_enabled:
