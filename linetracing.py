@@ -38,7 +38,8 @@ def main():
 
     print("=" * 60)
     print("Hybrid Line Tracing (CV + ML)")
-    print(f"CV weight: {linetracing_Judgment.CV_WEIGHT}, ML weight: {linetracing_Judgment.ML_WEIGHT}")
+    # [수정 1] 가중치 관련 출력 삭제 (더 이상 사용하지 않음)
+    print("Priority Mode: ML(Traffic Light) -> CV(Driving)")
     print("=" * 60)
 
     # Initialize modules
@@ -52,8 +53,9 @@ def main():
         use_ml = True
         print("✓ ML model loaded successfully")
         # Check if model is actually available
-        if linetracing_ml.model is None and linetracing_ml.interpreter is None:
-            print("⚠ Warning: ML model loaded but model/interpreter is None!")
+        # [수정 2] linetracing_ml 구조 변경에 맞춰 체크 로직 단순화
+        if linetracing_ml.interpreter is None:
+            print("⚠ Warning: ML interpreter is None!")
             use_ml = False
 
     linetracing_drive.init_drive()
@@ -62,8 +64,10 @@ def main():
     # Initialize camera
     print("Initializing camera...")
     picam2 = Picamera2()
+
+    # [수정 3] 카메라 설정 문법 에러 수정 (main=... 사용)
     config = picam2.create_preview_configuration(
-        main={"format": "RGB888", "size": (640, 480)}
+        main={"size": (640, 480), "format": "RGB888"}
     )
     picam2.configure(config)
     picam2.start()
@@ -116,8 +120,7 @@ def main():
                 if frame_counter >= CAPTURE_INTERVAL:
                     frame_counter = 0
                     image_counter += 1
-                    # Save the original frame (frame_rgb is RGB from Picamera2)
-                    # PIL Image expects RGB, so we can use it directly
+
                     image = Image.fromarray(frame_rgb)
                     filename = f"line_log/{args.testcase}_{image_counter:04d}.jpg"
                     image.save(filename)
