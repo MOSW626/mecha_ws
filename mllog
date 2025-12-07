@@ -25,3 +25,13 @@ Traceback (most recent call last):
   File "/usr/lib/python3/dist-packages/picamera2/picamera2.py", line 748, in _make_initial_stream_config
     raise ValueError(f"Bad key {key!r}: valid stream configuration keys are {valid}")
 ValueError: Bad key 'main': valid stream configuration keys are ('format', 'size', 'stride', 'preserve_ar')
+
+============================================================
+Hybrid Line Tracing (CV + ML)
+Traceback (most recent call last):
+  File "/home/mg1/mecha_ws/linetracing.py", line 276, in <module>
+    main()
+  File "/home/mg1/mecha_ws/linetracing.py", line 41, in main
+    print(f"CV weight: {linetracing_Judgment.CV_WEIGHT}, ML weight: {linetracing_Judgment.ML_WEIGHT}")
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'linetracing_Judgment' has no attribute 'CV_WEIGHT'
