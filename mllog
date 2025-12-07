@@ -1,0 +1,27 @@
+(mecha) mg1@raspberrypi:~/mecha_ws $ pip install tflite_runtime
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Collecting tflite_runtime
+  Downloading tflite_runtime-2.14.0-cp311-cp311-manylinux_2_34_aarch64.whl (2.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.3/2.3 MB 1.6 MB/s eta 0:00:00
+Requirement already satisfied: numpy>=1.23.2 in /usr/lib/python3/dist-packages (from tflite_runtime) (1.24.2)
+Installing collected packages: tflite_runtime
+Successfully installed tflite_runtime-2.14.0
+(mecha) mg1@raspberrypi:~/mecha_ws $ python3 ./infer_source.py
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[0:16:34.013129397] [4046]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+[0:16:34.080357955] [4073]  INFO IPAProxy ipa_proxy.cpp:180 Using tuning file /usr/share/libcamera/ipa/rpi/vc4/imx219.json
+[0:16:34.095671798] [4073]  INFO Camera camera_manager.cpp:220 Adding camera '/base/soc/i2c0mux/i2c@1/imx219@10' for pipeline handler rpi/vc4
+[0:16:34.095854932] [4073]  INFO RPI vc4.cpp:440 Registered camera /base/soc/i2c0mux/i2c@1/imx219@10 to Unicam device /dev/media2 and ISP device /dev/media1
+[0:16:34.095954287] [4073]  INFO RPI pipeline_base.cpp:1107 Using configuration file '/usr/share/libcamera/pipeline/rpi/vc4/rpi_apps.yaml'
+Traceback (most recent call last):
+  File "/home/mg1/mecha_ws/./infer_source.py", line 131, in <module>
+    main()
+  File "/home/mg1/mecha_ws/./infer_source.py", line 71, in main
+    picam2.configure(picam2.create_preview_configuration({"main":{"size":(640,480)}}))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/picamera2/picamera2.py", line 776, in create_preview_configuration
+    main = self._make_initial_stream_config({"format": "XBGR8888", "size": (640, 480), "preserve_ar": True}, main)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/picamera2/picamera2.py", line 748, in _make_initial_stream_config
+    raise ValueError(f"Bad key {key!r}: valid stream configuration keys are {valid}")
+ValueError: Bad key 'main': valid stream configuration keys are ('format', 'size', 'stride', 'preserve_ar')
