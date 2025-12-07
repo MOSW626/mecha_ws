@@ -5,8 +5,8 @@ from multiprocessing import Process, Value, Lock
 import ctypes
 
 # GPIO pin locations
-TRIG_LEFT = 17
-ECHO_LEFT = 27
+TRIG_LEFT  = 9 
+ECHO_LEFT  = 11
 TRIG_RIGHT = 5
 ECHO_RIGHT = 6
 
@@ -86,11 +86,11 @@ def sensor_process(left_val, right_val, lock):
                 if dt > max_dt: max_dt = dt
                 if loop_count % PRINT_INTERVAL == 0:
                     avg_dt = sum_dt / loop_count
-                    print(f"[SENSOR loop {loop_count}] "
-                          f"last={dt*1000:.3f} ms, "
-                          f"avg={avg_dt*1000:.3f} ms, "
-                          f"min={min_dt*1000:.3f} ms, "
-                          f"max={max_dt*1000:.3f} ms")
+                    # print(f"[SENSOR loop {loop_count}] "
+                    #       f"last={dt*1000:.3f} ms, "
+                    #       f"avg={avg_dt*1000:.3f} ms, "
+                    #       f"min={min_dt*1000:.3f} ms, "
+                    #       f"max={max_dt*1000:.3f} ms")
 
             loop_count += 1
 
