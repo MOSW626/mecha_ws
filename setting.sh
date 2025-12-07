@@ -15,3 +15,8 @@ pip install --upgrade pip
 pip install tflite-runtime
 curl -L -o Check_dependencies_pi.py https://raw.githubusercontent.com/jiyong-choi/ME203/main/Check_dependencies_pi.py
 python Check_dependencies_pi.py
+echo "Setting up Git..."
+git config --global user.name MOSW626
+git config --global user.email ays6533@naver.com
+echo "check camera..."
+python3 cameracheck.py
