@@ -1,0 +1,7 @@
+  File "/home/mg1/Downloads/camera.py", line 3, in <module>
+    picam2 = Picamera2()
+             ^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/picamera2/picamera2.py", line 341, in __init__
+    camera_num = self.global_camera_info()[camera_num]['Num']
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+IndexError: list index out of range
