@@ -273,4 +273,15 @@ def create_debug_image(frame_rgb, cv_debug, cv_result, ml_result, final_judgment
         cv2.putText(img_resized, f"Bottom: {cv_debug['bottom_center']:.1f}", (10, info_y + 60),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
     else:
-        cv2.putText(img_resized, "Bottom: None", (10, info_y +
+        cv2.putText(img_resized, "Bottom: None", (10, info_y + 60),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
+
+    if cv_debug.get('line_angle') is not None:
+        cv2.putText(img_resized, f"Angle: {cv_debug['line_angle']:.1f}deg", (10, info_y + 80),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+
+    debug_img_rgb = cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB)
+    return debug_img_rgb
+
+if __name__ == "__main__":
+    main()
