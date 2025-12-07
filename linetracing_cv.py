@@ -387,6 +387,7 @@ def judge_cv(frame_rgb, return_debug=False):
             return 'green', debug_info
         return 'green'
     """
+    traffic_light = None  # ★ 강제로 None으로 고정!
 
     # Preprocess image
     roi, roi_top = preprocess_image(frame_rgb)

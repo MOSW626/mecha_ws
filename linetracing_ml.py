@@ -67,7 +67,7 @@ def preprocess_frame_for_model(frame_rgb):
 # linetracing_ml.py 수정
 
 # [설정 추가] 0.0 ~ 1.0 사이. 0.8 추천 (80% 이상 확실할 때만 인정)
-CONFIDENCE_THRESHOLD = 0.8
+CONFIDENCE_THRESHOLD = 0.9
 
 def judge_ml(frame_rgb):
     global interpreter, inp, out, LABELS
