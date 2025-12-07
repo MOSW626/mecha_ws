@@ -57,13 +57,7 @@ def preprocess_frame_for_model(frame):
     return out[None, ...]
 
 def map_to_order(pred_label):
-    # only three orders requested: 'left', 'right', 'noline'
-    if pred_label == "left":
-        return "left"
-    if pred_label == "right":
-        return "right"
-    # treat anything else as 'noline' (keeps output minimal)
-    return "noline"
+    return pred_label
 
 def main():
     picam2 = Picamera2()
