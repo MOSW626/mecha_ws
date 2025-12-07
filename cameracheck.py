@@ -9,7 +9,7 @@ try:
     frame = picam2.capture_array()
     cv2.imshow("Pi Camera (OpenCV)", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
-    break
+        break
 finally:
   picam2.stop()
   cv2.destroyAllWindows()
