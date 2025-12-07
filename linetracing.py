@@ -18,27 +18,27 @@ import linetracing_drive
 
 def main():
     """Hybrid line tracing main loop"""
-    # Parse command line arguments
     parser = argparse.ArgumentParser(description='Hybrid Line Tracing (CV + ML)')
     parser.add_argument('-testcase', type=str, default=None,
                         help='Test case name for saving captured images (e.g., -testcase test1)')
     args = parser.parse_args()
 
-    # Setup image capture if testcase is provided
+    # [수정 1] 로그 저장 설정
     capture_enabled = args.testcase is not None
     frame_counter = 0
     image_counter = 0
-    CAPTURE_INTERVAL = 20  # Capture every 20 frames
+
+    # ★ 여기를 수정했습니다: 20 -> 3
+    # 3프레임마다 저장 (너무 자주 저장하면 렉 걸림. 1로 하면 모든 프레임 저장)
+    CAPTURE_INTERVAL = 3
 
     if capture_enabled:
-        # Ensure line_log directory exists
         log_dir = "line_log"
         os.makedirs(log_dir, exist_ok=True)
-        print(f"📸 Image capture enabled: {log_dir}/{args.testcase}_<NUM>.jpg")
+        print(f"📸 Image capture enabled: {log_dir}/{args.testcase}_<NUM>.jpg (Interval: {CAPTURE_INTERVAL})")
 
     print("=" * 60)
     print("Hybrid Line Tracing (CV + ML)")
-    # [수정 1] 가중치 관련 출력 삭제 (더 이상 사용하지 않음)
     print("Priority Mode: ML(Traffic Light) -> CV(Driving)")
     print("=" * 60)
 
@@ -52,8 +52,6 @@ def main():
     else:
         use_ml = True
         print("✓ ML model loaded successfully")
-        # Check if model is actually available
-        # [수정 2] linetracing_ml 구조 변경에 맞춰 체크 로직 단순화
         if linetracing_ml.interpreter is None:
             print("⚠ Warning: ML interpreter is None!")
             use_ml = False
@@ -64,8 +62,6 @@ def main():
     # Initialize camera
     print("Initializing camera...")
     picam2 = Picamera2()
-
-    # [수정 3] 카메라 설정 문법 에러 수정 (main=... 사용)
     config = picam2.create_preview_configuration(
         main={"size": (640, 480), "format": "RGB888"}
     )
@@ -74,32 +70,29 @@ def main():
     time.sleep(1)
     print("✓ Camera initialized\n")
 
-    # Initial settings
     linetracing_drive.set_servo_angle(90)
     time.sleep(0.1)
 
     print("Line tracing started!\n")
 
-    # Waiting for green light state
     waiting_for_green = False
-
-    # Track consecutive "non" states for backward movement
     non_count = 0
-    MAX_NON_COUNT = 10  # Number of consecutive "non" before backing up
-    BACKUP_SPEED = 5  # Speed for backing up
-    BACKUP_DURATION = 0.6  # Duration to backup (seconds)
-    # (변수 초기화 부분에 추가)
+    MAX_NON_COUNT = 10
+    BACKUP_SPEED = 5
+    BACKUP_DURATION = 0.6
+
     consecutive_red_count = 0
     consecutive_green_count = 0
-    DETECTION_REQUIREMENT = 3  # 3프레임 연속 감지되어야 인정
+    DETECTION_REQUIREMENT = 3
 
     try:
         while True:
-            # Capture frame
             frame_rgb = picam2.capture_array()
 
-            # CV judgment (with debug info if capturing)
-            if capture_enabled and frame_counter == CAPTURE_INTERVAL - 1:
+            # [수정 2] 캡처 타이밍이면 무조건 디버그 정보를 요청
+            is_capture_frame = capture_enabled and (frame_counter >= CAPTURE_INTERVAL - 1)
+
+            if is_capture_frame:
                 cv_result, cv_debug = linetracing_cv.judge_cv(frame_rgb, return_debug=True)
             else:
                 cv_result = linetracing_cv.judge_cv(frame_rgb)
@@ -111,68 +104,76 @@ def main():
                 try:
                     ml_result = linetracing_ml.judge_ml(frame_rgb)
                 except Exception as e:
-                    if frame_counter == 0:  # Only print error once per capture interval
+                    if frame_counter == 0:
                         print(f"⚠ ML judgment error: {e}")
                     ml_result = None
 
             # Combine judgments
             raw_judgment = linetracing_Judgment.combine_judgments(cv_result, ml_result)
-            final_judgment = raw_judgment # 기본값
+            final_judgment = raw_judgment
 
-            # [필터링 로직 추가]
-            # Red/Green이 떴을 때 바로 반응하지 않고 카운트
-            if raw_judgment == "red":
-                consecutive_red_count += 1
-            else:
-                consecutive_red_count = 0 # 끊기면 리셋
-
-            if raw_judgment == "green":
-                consecutive_green_count += 1
-            else:
+            # [수정 3] 주행 문제 해결 로직 적용 (CV가 라인을 잘 보고 있으면 ML의 Green 무시)
+            if raw_judgment == "green" and cv_result in ["forward", "left", "right"]:
+                # ML은 Green이라지만 CV는 주행 중 -> ML 오탐 무시
+                final_judgment = cv_result
                 consecutive_green_count = 0
 
-            # Red 판단: 연속 3번 이상 떴을 때만 진짜 Red로 확정
-            if consecutive_red_count >= DETECTION_REQUIREMENT:
-                final_judgment = "red"
-            elif consecutive_green_count >= DETECTION_REQUIREMENT:
-                final_judgment = "green"
-            # Red 판단: 연속 3번 이상 떴을 때만 진짜 Red로 확정
+            # 필터링 로직
+            elif raw_judgment == "red":
+                consecutive_red_count += 1
+                consecutive_green_count = 0
+            elif raw_judgment == "green":
+                consecutive_green_count += 1
+                consecutive_red_count = 0
+            else:
+                consecutive_red_count = 0
+                consecutive_green_count = 0
+
+            # Red/Green 확정 로직
             if consecutive_red_count >= DETECTION_REQUIREMENT:
                 final_judgment = "red"
             elif consecutive_green_count >= DETECTION_REQUIREMENT:
                 final_judgment = "green"
             else:
-                # [중요 변경] ML이 Red/Green 확정이 아니라면,
-                # ML이 Left/Right라고 떠들어도 무시하고 무조건 CV 주행 결과를 따릅니다.
-                final_judgment = cv_result if cv_result is not None else "non"
+                # 카운트 부족 시 CV 결과 따름 (Red/Green 오탐 방지)
+                if raw_judgment in ["red", "green"]:
+                    final_judgment = cv_result if cv_result else "non"
+                else:
+                    final_judgment = raw_judgment
 
-            # Capture image every 20 frames if testcase is provided
-            if capture_enabled:
-                frame_counter += 1
-                if frame_counter >= CAPTURE_INTERVAL:
-                    frame_counter = 0
-                    image_counter += 1
+            # [수정 4] 저장 로직: 조건 없이 Interval 되면 무조건 저장
+            if is_capture_frame:
+                frame_counter = 0 # 카운터 리셋
+                image_counter += 1
 
-                    image = Image.fromarray(frame_rgb)
-                    filename = f"line_log/{args.testcase}_{image_counter:04d}.jpg"
-                    image.save(filename)
+                # 원본 저장
+                image = Image.fromarray(frame_rgb)
+                filename = f"line_log/{args.testcase}_{image_counter:04d}.jpg"
+                image.save(filename)
 
-                    # Save debug image with CV processing results
-                    if cv_debug:
-                        debug_filename = f"line_log/{args.testcase}_{image_counter:04d}_debug.jpg"
-                        debug_img = create_debug_image(frame_rgb, cv_debug, cv_result, ml_result, final_judgment)
-                        debug_image_pil = Image.fromarray(debug_img)
-                        debug_image_pil.save(debug_filename)
-                        print(f"📸 Captured: {filename} + {debug_filename} (CV: {cv_result}, ML: {ml_result}, Final: {final_judgment})")
-                    else:
-                        print(f"📸 Captured: {filename} (CV: {cv_result}, ML: {ml_result}, Final: {final_judgment})")
+                # 디버그 이미지 저장 (cv_debug가 있으면 무조건)
+                if cv_debug:
+                    debug_filename = f"line_log/{args.testcase}_{image_counter:04d}_debug.jpg"
+                    debug_img = create_debug_image(frame_rgb, cv_debug, cv_result, ml_result, final_judgment)
+                    debug_image_pil = Image.fromarray(debug_img)
+                    debug_image_pil.save(debug_filename)
+                    print(f"📸 Captured: {filename} (Final: {final_judgment})")
+                else:
+                    # cv_debug가 없더라도 원본은 저장됨
+                    print(f"📸 Captured: {filename} (No Debug Info)")
 
+            else:
+                # 캡처 안 하는 프레임은 카운트만 증가
+                if capture_enabled:
+                    frame_counter += 1
+
+            # --- 주행 로직 ---
             # Handle red light
             if final_judgment == "red" and not waiting_for_green:
                 print("🔴 Red light detected - stopping")
                 linetracing_drive.drive("red")
                 waiting_for_green = True
-                non_count = 0  # Reset non count
+                non_count = 0
 
             # Waiting for green light
             if waiting_for_green:
@@ -180,56 +181,42 @@ def main():
                     print("🟢 Green light detected - resuming")
                     time.sleep(0.5)
                     waiting_for_green = False
-                    non_count = 0  # Reset non count
+                    non_count = 0
                 else:
-                    # Continue waiting
                     time.sleep(0.1)
                     continue
 
             # Driving control
             if not waiting_for_green:
-                # Handle "non" state - backup if line lost for too long
                 if final_judgment == "non":
                     non_count += 1
                     if non_count >= MAX_NON_COUNT:
-                        print(f"⚠ Line lost for {non_count} frames - backing up to find line")
-                        # Stop first
+                        print(f"⚠ Line lost for {non_count} frames - backing up")
                         linetracing_drive.stop_motor()
                         time.sleep(0.1)
-                        # Backup
                         linetracing_drive.move_backward(BACKUP_SPEED)
                         time.sleep(BACKUP_DURATION)
-                        # Stop after backup
                         linetracing_drive.stop_motor()
                         time.sleep(0.1)
-                        # Try rotating slightly left and right to find line
                         print("  Searching for line by rotating...")
-                        for angle in [50, 130, 90]:  # Left, right, center
+                        for angle in [50, 130, 90]:
                             linetracing_drive.set_servo_angle(angle)
                             time.sleep(0.2)
-                            # Check if line found
                             test_frame = picam2.capture_array()
                             test_cv = linetracing_cv.judge_cv(test_frame)
                             if test_cv != "non":
-                                print(f"  ✓ Line found at angle {angle}")
                                 break
-                        non_count = 0  # Reset counter after backup
-                        print("✓ Backup complete - resuming line search")
+                        non_count = 0
                     else:
-                        # Continue with normal non handling - slow down more
                         linetracing_drive.drive(final_judgment)
                 else:
-                    # Line found - reset non count
                     if non_count > 0:
                         print(f"✓ Line found after {non_count} non frames")
                     non_count = 0
                     linetracing_drive.drive(final_judgment)
 
-                # Debug output
-                cv_info = f"CV: {cv_result}" if cv_result else "CV: None"
-                ml_info = f"ML: {ml_result}" if ml_result else "ML: None"
-                non_info = f" | Non: {non_count}/{MAX_NON_COUNT}" if final_judgment == "non" else ""
-                print(f"Direction: {final_judgment} | {cv_info} | {ml_info}{non_info}")
+                # 터미널 출력 최소화 (로그 확인용)
+                # print(f"Direction: {final_judgment}")
 
             time.sleep(0.01)
 
@@ -245,22 +232,17 @@ def main():
         print("System shutdown complete")
 
 def create_debug_image(frame_rgb, cv_debug, cv_result, ml_result, final_judgment):
-    """Create debug image showing CV processing results"""
-    # frame_rgb는 RGB 형식이어야 함 (Picamera2는 RGB 반환)
-    # OpenCV 표시를 위해 BGR로 변환
+    # 기존 create_debug_image 함수와 동일
     frame_bgr = cv2.cvtColor(frame_rgb.copy(), cv2.COLOR_RGB2BGR)
     h_orig, w_orig = frame_bgr.shape[:2]
 
-    # Resize to match CV processing size
     img_resized = cv2.resize(frame_bgr, (linetracing_cv.IMG_WIDTH, linetracing_cv.IMG_HEIGHT))
     h, w = img_resized.shape[:2]
 
-    # Draw ROI rectangle (on resized image)
     roi_top = int(h * linetracing_cv.ROI_TOP)
     roi_bottom = h
     cv2.rectangle(img_resized, (0, roi_top), (w, roi_bottom), (0, 255, 0), 2)
 
-    # Draw line centers if detected
     if cv_debug.get('bottom_center') is not None:
         bottom_y = int(roi_top + (roi_bottom - roi_top) * 0.8)
         cv2.circle(img_resized, (int(cv_debug['bottom_center']), bottom_y), 5, (255, 0, 0), -1)
@@ -271,19 +253,14 @@ def create_debug_image(frame_rgb, cv_debug, cv_result, ml_result, final_judgment
         top_y = int(roi_top + (roi_bottom - roi_top) * 0.2)
         cv2.circle(img_resized, (int(cv_debug['top_center']), top_y), 5, (0, 255, 255), -1)
 
-    # Draw binary image on the side
     if cv_debug.get('binary') is not None:
         binary = cv_debug['binary']
-        # Convert binary to 3-channel for display
         binary_colored = cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR)
-        # Resize binary to fit on the side
         binary_h = int(h * 0.3)
         binary_w = int(binary_colored.shape[1] * binary_h / binary_colored.shape[0])
         binary_resized = cv2.resize(binary_colored, (binary_w, binary_h))
-        # Place binary image on the right side
         img_resized[0:binary_h, w-binary_w:w] = binary_resized[:, :min(binary_w, w)]
 
-    # Add text information
     info_y = 20
     cv2.putText(img_resized, f"CV: {cv_result}", (10, info_y),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
@@ -296,16 +273,4 @@ def create_debug_image(frame_rgb, cv_debug, cv_result, ml_result, final_judgment
         cv2.putText(img_resized, f"Bottom: {cv_debug['bottom_center']:.1f}", (10, info_y + 60),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
     else:
-        cv2.putText(img_resized, "Bottom: None", (10, info_y + 60),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
-
-    if cv_debug.get('line_angle') is not None:
-        cv2.putText(img_resized, f"Angle: {cv_debug['line_angle']:.1f}deg", (10, info_y + 80),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
-
-    # Convert back to RGB
-    debug_img_rgb = cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB)
-    return debug_img_rgb
-
-if __name__ == "__main__":
-    main()
+        cv2.putText(img_resized, "Bottom: None", (10, info_y +

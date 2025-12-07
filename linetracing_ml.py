@@ -45,8 +45,8 @@ def preprocess_frame_for_model(frame_rgb):
 
     # 1. 이미지 자르기 (ROI)
     h, w, c = frame_rgb.shape
-    # 상단 0% ~ 60%까지만 사용 (필요에 따라 0.5 ~ 0.7로 조절)
-    roi_h = int(h * 0.6)
+    # 상단 0% ~ 40%까지만 사용 (필요에 따라 0.5 ~ 0.7로 조절)
+    roi_h = int(h * 0.4)
     frame_cropped = frame_rgb[0:roi_h, :]
 
     # 2. BGR 변환 (infer_source 방식 유지)

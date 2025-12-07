@@ -365,7 +365,7 @@ def judge_cv(frame_rgb, return_debug=False):
 
     img_center = IMG_WIDTH / 2
     debug_info = {}
-
+    """
     # Detect traffic light (priority)
     traffic_light = detect_traffic_light(frame_rgb)
     if traffic_light == 'red':
@@ -386,6 +386,7 @@ def judge_cv(frame_rgb, return_debug=False):
             debug_info['top_center'] = None
             return 'green', debug_info
         return 'green'
+    """
 
     # Preprocess image
     roi, roi_top = preprocess_image(frame_rgb)
