@@ -35,3 +35,9 @@ Traceback (most recent call last):
     print(f"CV weight: {linetracing_Judgment.CV_WEIGHT}, ML weight: {linetracing_Judgment.ML_WEIGHT}")
                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: module 'linetracing_Judgment' has no attribute 'CV_WEIGHT'
+
+🟢 GREEN Confirmed! GO!
+
+✓ Driving module cleaned up
+🚀 Escape Move...
+❌ Error during Part 1: A PWM object already exists for this GPIO channel

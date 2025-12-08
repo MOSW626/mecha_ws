@@ -5,18 +5,13 @@ from multiprocessing import Process, Value, Lock
 import ctypes
 
 # ==================== 제어 파라미터 ====================
-# PD Gains (초음파 모드용)
-Kp = 2.6 #1,5
-Kd = 0.0 #0.01
-
-base_angle = 100.0
-
-speed_angle_diff = 0.27 #0.45
-
-# 속도 설정
+# Gains (초음파 모드용)
+Kp = 2.7 # 2.4
+speed_angle_diff = 0.35 # 0.3
 SPEED_ULTRASONIC = 100.0
 
 # Distance Clipping values
+base_angle = 90.0
 MIN_CM, MAX_CM = 3.0, 150.0
 
 # ==================== GPIO 핀 설정 ====================
@@ -40,9 +35,7 @@ ECHO_RIGHT = 6
 motor_pwm = None
 servo_pwm = None
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setup([TRIG_LEFT, TRIG_RIGHT], GPIO.OUT)
-GPIO.setup([ECHO_LEFT, ECHO_RIGHT], GPIO.IN)
+ALPHA = 0.8
 
 # ==================== 초음파 센서 함수 ====================
 def sample_distance(trig, echo):
@@ -53,18 +46,30 @@ def sample_distance(trig, echo):
     t0 = time.time()
     while GPIO.input(echo) == 0:
         if time.time() - t0 > 0.02:   # 20ms 타임아웃
-            return 7878
+            return 8787
     start = time.time()
 
     while GPIO.input(echo) == 1:
         if time.time() - start > 0.02:
-            return 7878
+            return 8787
     end = time.time()
 
     dist = (end - start) * 34300.0 / 2.0
     dist = max(MIN_CM, min(dist, MAX_CM))
     return dist
 
+def smooth(prev_value, new_value, alpha=ALPHA):
+    if new_value == 8787:
+        return None
+    if new_value is None:
+        return prev_value
+    if prev_value is None:
+        return new_value
+
+    # if abs(prev_value - new_value) > 50.0:
+    #     return prev_value
+    # else:
+    return alpha * new_value + (1.0 - alpha) * prev_value
 # ==================== 모터 / 서보 제어 함수 ====================
 def init_motor_servo():
     global motor_pwm, servo_pwm
@@ -80,6 +85,7 @@ def init_motor_servo():
 
 def set_servo_angle(degree):
     degree = max(45.0, min(135.0, degree))
+    # degree = max(50.0, min(130.0, degree))
     duty = SERVO_MIN_DUTY + (degree * (SERVO_MAX_DUTY - SERVO_MIN_DUTY) / 180.0)
     servo_pwm.ChangeDutyCycle(duty)
 
@@ -94,8 +100,45 @@ def move_backward(speed):
 def stop_motor():
     motor_pwm.ChangeDutyCycle(0)
 
-def main_control():
-    global motor_pwm, servo_pwm
+def sensor_process(left_val, right_val, lock):
+    # 코어 1번에 pinning (원하는 코어 번호로 바꿔도 됨)
+    set_affinity({1})
+
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup([TRIG_LEFT, TRIG_RIGHT], GPIO.OUT)
+    GPIO.setup([ECHO_LEFT, ECHO_RIGHT], GPIO.IN)
+
+    last_left = None
+    last_right = None
+
+    try:
+        while True:
+            raw_left  = sample_distance(TRIG_LEFT, ECHO_LEFT)
+            raw_right = sample_distance(TRIG_RIGHT, ECHO_RIGHT)
+
+            left  = smooth(last_left, raw_left)
+            right = smooth(last_right, raw_right)
+            last_left, last_right = left, right
+
+            with lock:
+                left_val.value  = left if left is not None else 0.0
+                right_val.value = right if right is not None else 0.0
+
+            time.sleep(0.002)
+    except KeyboardInterrupt:
+        print("센서 프로세스 종료")
+    finally:
+        GPIO.cleanup()
+
+def set_affinity(core_ids):
+    """
+    core_ids: {0}, {1}, {0,1} 이런 식의 set
+    """
+    os.sched_setaffinity(0, core_ids)
+
+def main_control(left_val, right_val, lock):
+    set_affinity({1})
+    global motor_pwm, servo_pwm, speed_angle_diff
     init_motor_servo()
 
     # 초기 상태
@@ -124,25 +167,13 @@ def main_control():
 
     status_before = straight
 
-    left_prev  = sample_distance(TRIG_LEFT, ECHO_LEFT)
-    right_prev = sample_distance(TRIG_RIGHT, ECHO_RIGHT)
-
-    log = 0
+    set_servo_angle(base_angle)
 
     try:
         while True:
-            left  = sample_distance(TRIG_LEFT, ECHO_LEFT)
-            right = sample_distance(TRIG_RIGHT, ECHO_RIGHT)
-
-            if left == 7878 or left >= 120.0:
-                left = left_prev
-            else:
-                left_prev = left
-            
-            if right == 7878 or right >= 120.0:
-                right = right_prev
-            else:
-                right_prev = right
+            with lock:
+                left  = left_val.value
+                right = right_val.value
 
             difference = right - left
 
@@ -174,13 +205,19 @@ def main_control():
                                 track_change_lock = time.time()
 
             if straight_continous_time is not None:
-                if time.time() - straight_continous_time > 0.7:
-                    speed_straight_diff -= 0.5
+                if time.time() - straight_continous_time > 0.4:
+                    speed_straight_diff -= 0.4
                     print('speed down')
                     if speed_straight_diff < -20.0:
                         speed_straight_diff = -20.0
 
             error = ref_distance_difference - (right - left)
+
+            if error > 100.0:
+                error = 100.0
+            elif error < -100.0:
+                error = -100.0
+
             output = Kp * error
 
             angle_cmd = base_angle - output
@@ -197,7 +234,7 @@ def main_control():
             set_servo_angle(angle_cmd)
             move_forward(speed_cmd)
 
-            time.sleep(0.002)
+            time.sleep(0.02)
 
 
     except KeyboardInterrupt:
@@ -218,10 +255,15 @@ def main_control():
 
 # ==================== 엔트리 포인트 ====================
 if __name__ == "__main__":
+    left_val  = Value(ctypes.c_double, 0.0)
+    right_val = Value(ctypes.c_double, 0.0)
+    lock = Lock()
+    # 센서 프로세스 시작
+    p_sensor = Process(target=sensor_process, args=(left_val, right_val, lock))
+    p_sensor.start()
     try:
         time.sleep(1)
-        # 현재 프로세스에서 메인 제어 수행
-        main_control()
+        main_control(left_val, right_val, lock)
     except KeyboardInterrupt:
         print("전체 시스템 KeyboardInterrupt")
     finally:

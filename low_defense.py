@@ -8,12 +8,12 @@ import ctypes
 
 # ==================== 제어 파라미터 ====================
 # PD Gains (초음파 모드용)
-Kp = 2.55 #1,5
-Kd = 0.0 #0.01
+Kp = 2.55 # 2.55
+Kd = 0.0  # 0.0
 
-base_angle = 100.0
+base_angle = 90.0
 
-speed_angle_diff = 0.28 #0.45
+speed_angle_diff = 0.28 #0.28
 
 # 속도 설정
 SPEED_ULTRASONIC = 90.0
