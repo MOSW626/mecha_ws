@@ -10,12 +10,12 @@ import numpy as np
 # ==================== Image Processing Settings ====================
 IMG_WIDTH = 320
 IMG_HEIGHT = 240
-ROI_TOP = 0.65  # Wider ROI to reduce non detection (was 0.4)
+ROI_TOP = 0.4  # Wider ROI to reduce non detection (was 0.4)
 ROI_BOTTOM = 1.0
 
 # Line detection settings
 WHITE_THRESHOLD = 160  # Lower threshold to detect more lines (was 200)
-MIN_LINE_WIDTH = 5  # Lower minimum to catch thinner lines (was 2)
+MIN_LINE_WIDTH = 2  # Lower minimum to catch thinner lines (was 2)
 MAX_LINE_WIDTH = 200  # Higher maximum to catch wider lines (was 20)
 
 # Control variables (for state maintenance)
@@ -252,9 +252,9 @@ def detect_traffic_light(frame):
     # ==================== 1. STOP SIGNALS (RED + BLUE) ====================
     # A. Red Ranges (Standard Red)
     # Value > 150 ensures we are looking for bright lights
-    red_lower1 = np.array([0, 40, 150])
+    red_lower1 = np.array([0, 35, 150])
     red_upper1 = np.array([10, 255, 255])
-    red_lower2 = np.array([170, 40, 150])
+    red_lower2 = np.array([170, 35, 150])
     red_upper2 = np.array([180, 255, 255])
 
     mask_red = cv2.bitwise_or(cv2.inRange(hsv, red_lower1, red_upper1),
@@ -262,7 +262,7 @@ def detect_traffic_light(frame):
 
     # B. Blue Ranges (For BGR camera issue)
     # Hue 100-130 covers standard Blue
-    blue_lower = np.array([100, 40, 150])
+    blue_lower = np.array([100, 35, 150])
     blue_upper = np.array([130, 255, 255])
     mask_blue = cv2.inRange(hsv, blue_lower, blue_upper)
 

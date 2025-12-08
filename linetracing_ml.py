@@ -8,9 +8,9 @@ import tflite_runtime.interpreter as tflite
 import os
 
 # ==================== Settings ====================
-MODEL_PATH = "./model.tflite"
+MODEL_PATH = "./gpu_model_lite.tflite.tflite"
 # infer_source.py에 있던 라벨 순서 그대로 사용
-LABELS = ["middle", "green", "left", "right", "red", "noline"]
+LABELS = ["cv", "green", "red"]
 
 interpreter = None
 inp = None
