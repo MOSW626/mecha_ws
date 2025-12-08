@@ -1,0 +1,24 @@
+🚀 Escape Move: Driving Forward Blindly for 1.5 sec...
+✓ Driving module cleaned up
+✓ Linetracing Cleanup Done.
+✓ Handing over to Low Defense.
+
+✅ PART 1 Complete. Switching to Ultrasonic Mode...
+✓ GPIO Cleaned up for Part 2.
+
+>>> STARTING PART 2: Low Defense Driving
+❌ Error during Part 2: A PWM object already exists for this GPIO channel
+System Shutdown.
+Exception ignored in: <function PWM.__del__ at 0x7f8bb41ee0>
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 179, in __del__
+  File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 202, in stop
+  File "/usr/lib/python3/dist-packages/lgpio.py", line 1084, in tx_pwm
+TypeError: unsupported operand type(s) for &: 'NoneType' and 'int'
+Exception ignored in: <function PWM.__del__ at 0x7f8bb41ee0>
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 179, in __del__
+  File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 202, in stop
+  File "/usr/lib/python3/dist-packages/lgpio.py", line 1084, in tx_pwm
+TypeError: unsupported operand type(s) for &: 'NoneType' and 'int'
+(mecha) mg1@raspberrypi:~/mecha_ws $ 
