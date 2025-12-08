@@ -46,7 +46,7 @@ def main():
     except Exception as e:
         print(f"Warning during cleanup: {e}")
 
-    time.sleep(1.0) # 안정화 대기
+    time.sleep(0) # 안정화 대기
 
     # PART 2: Ultrasonic Driving
     print("\n>>> STARTING PART 2: Low Defense Driving")

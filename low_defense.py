@@ -5,9 +5,9 @@ import os
 # ==================== 제어 파라미터 ====================
 Kp = 2.55
 Kd = 0.0
-base_angle = 90.0
+base_angle = 100.0
 speed_angle_diff = 0.28
-SPEED_ULTRASONIC = 90.0
+SPEED_ULTRASONIC = 92.0
 MIN_CM, MAX_CM = 3.0, 150.0
 
 # ==================== GPIO 핀 설정 ====================

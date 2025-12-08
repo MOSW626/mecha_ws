@@ -116,8 +116,8 @@ def run_linetracing_sequence():
                         # ★ [수정] 탈출 주행을 루프 안에서 즉시 실행 (Cleanup 되기 전에!)
                         print("🚀 Escape Move: Driving Forward Blindly for 1.5 sec...")
                         linetracing_drive.set_servo_angle(90)
-                        linetracing_drive.move_forward(40) # 속도 약간 증가 (20 -> 25)
-                        time.sleep(1) # 1.5초간 직진
+                        linetracing_drive.move_forward(100) # 속도 약간 증가 (20 -> 25)
+                        time.sleep(0.7) # 1.5초간 직진
 
                         linetracing_drive.stop_motor()
                         success_finish = True # 성공 플래그 세팅
