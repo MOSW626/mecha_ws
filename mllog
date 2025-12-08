@@ -41,3 +41,43 @@ AttributeError: module 'linetracing_Judgment' has no attribute 'CV_WEIGHT'
 ✓ Driving module cleaned up
 🚀 Escape Move...
 ❌ Error during Part 1: A PWM object already exists for this GPIO channel
+
+Stage: WaitGRN | ML: red     | CV: OFF     | Act: red
+Stage: WaitGRN | ML: red     | CV: OFF     | Act: red
+Stage: WaitGRN | ML: red     | CV: OFF     | Act: red
+Stage: WaitGRN | ML: red     | CV: OFF     | Act: red
+Stage: WaitGRN | ML: red     | CV: OFF     | Act: red
+Stage: WaitGRN | ML: red     | CV: OFF     | Act: red
+Stage: WaitGRN | ML: red     | CV: OFF     | Act: red
+Stage: WaitGRN | ML: red     | CV: OFF     | Act: red
+Stage: WaitGRN | ML: red     | CV: OFF     | Act: red
+Stage: WaitGRN | ML: red     | CV: OFF     | Act: red
+Waiting Green... 1/3Stage: WaitGRN | ML: green   | CV: OFF     | Act: red
+Waiting Green... 2/3Stage: WaitGRN | ML: green   | CV: OFF     | Act: red
+Waiting Green... 3/3
+
+🟢 GREEN Confirmed! GO! -> Executing Escape Move...
+
+🚀 Escape Move: Driving Forward Blindly for 1.5 sec...
+✓ Driving module cleaned up
+✓ Linetracing Cleanup Done.
+✓ Handing over to Low Defense.
+
+✅ PART 1 Complete. Switching to Ultrasonic Mode...
+
+>>> STARTING PART 2: Low Defense Driving
+❌ Error during Part 2: A PWM object already exists for this GPIO channel
+System Shutdown.
+Exception ignored in: <function PWM.__del__ at 0x7fa6ab1ee0>
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 179, in __del__
+  File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 202, in stop
+  File "/usr/lib/python3/dist-packages/lgpio.py", line 1084, in tx_pwm
+TypeError: unsupported operand type(s) for &: 'NoneType' and 'int'
+Exception ignored in: <function PWM.__del__ at 0x7fa6ab1ee0>
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 179, in __del__
+  File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 202, in stop
+  File "/usr/lib/python3/dist-packages/lgpio.py", line 1084, in tx_pwm
+TypeError: unsupported operand type(s) for &: 'NoneType' and 'int'
+(mecha) mg1@raspberrypi:~/mecha_ws $ 
