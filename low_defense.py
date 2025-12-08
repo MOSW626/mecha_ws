@@ -5,7 +5,7 @@ import os
 # ==================== 제어 파라미터 ====================
 Kp = 2.55
 Kd = 0.0
-base_angle = 100.0
+base_angle = 90.0
 speed_angle_diff = 0.28
 SPEED_ULTRASONIC = 90.0
 MIN_CM, MAX_CM = 3.0, 150.0
@@ -24,11 +24,9 @@ ECHO_LEFT  = 27
 TRIG_RIGHT = 5
 ECHO_RIGHT = 6
 
-# 전역 변수 (초기값 None)
+# 전역 변수
 motor_pwm = None
 servo_pwm = None
-
-# ★ 함수 밖에서는 GPIO 설정을 절대 하지 않습니다.
 
 # ==================== 초음파 센서 함수 ====================
 def sample_distance(trig, echo):
@@ -55,21 +53,29 @@ def sample_distance(trig, echo):
 def init_motor_servo():
     global motor_pwm, servo_pwm
 
-    # ★ 모든 설정은 이 함수가 호출될 때 수행합니다.
+    # ★ [수정 1] 경고 메시지 끄기 (이미 PWM이 존재한다는 에러 방지용)
+    GPIO.setwarnings(False)
+
     try:
         GPIO.setmode(GPIO.BCM)
     except Exception:
-        pass # 이미 설정되어 있어도 무시
+        pass
 
+    # ★ [수정 2] 사용하려는 핀을 명시적으로 먼저 cleanup 하여 점유를 풉니다.
+    try:
+        GPIO.cleanup([DIR_PIN, PWM_PIN, SERVO_PIN, TRIG_LEFT, TRIG_RIGHT])
+    except:
+        pass # cleanup 할 게 없으면 패스
+
+    # 핀 재설정
     GPIO.setup(DIR_PIN, GPIO.OUT)
     GPIO.setup(PWM_PIN, GPIO.OUT)
     GPIO.setup(SERVO_PIN, GPIO.OUT)
 
-    # 초음파 핀 설정
     GPIO.setup([TRIG_LEFT, TRIG_RIGHT], GPIO.OUT)
     GPIO.setup([ECHO_LEFT, ECHO_RIGHT], GPIO.IN)
 
-    # PWM 생성
+    # PWM 생성 (기존 객체가 있으면 덮어쓰기)
     motor_pwm = GPIO.PWM(PWM_PIN, MOTOR_FREQ)
     servo_pwm = GPIO.PWM(SERVO_PIN, SERVO_FREQ)
     motor_pwm.start(0)
@@ -97,14 +103,13 @@ def stop_motor():
 def main_control():
     global motor_pwm, servo_pwm
 
-    # ★ 여기서 초기화를 시작합니다
     init_motor_servo()
 
     # 초기 상태
     set_servo_angle(base_angle)
     stop_motor()
 
-    print("메인 제어 프로세스 시작")
+    print("메인 제어 프로세스 시작 (Low Defense)")
 
     corner_time = None
     straight_time = None
@@ -124,7 +129,6 @@ def main_control():
     straight = False
     status_before = straight
 
-    # 첫 센싱
     left_prev  = sample_distance(TRIG_LEFT, ECHO_LEFT)
     right_prev = sample_distance(TRIG_RIGHT, ECHO_RIGHT)
 
@@ -155,7 +159,6 @@ def main_control():
                             straight_continous_time = None
                             speed_straight_diff = 0.0
                             status_before = corner
-                            # print('corner detected')
                             track_change_lock = time.time()
                 else:
                     if status_before == corner:
@@ -166,13 +169,11 @@ def main_control():
                                 straight_time = None
                                 straight_continous_time = time.time()
                                 status_before = straight
-                                # print('straight path detected')
                                 track_change_lock = time.time()
 
             if straight_continous_time is not None:
                 if time.time() - straight_continous_time > 0.9:
                     speed_straight_diff -= 0.6
-                    # print('speed down')
                     if speed_straight_diff < -20.0:
                         speed_straight_diff = -20.0
 
@@ -184,6 +185,7 @@ def main_control():
 
             speed_cmd = SPEED_ULTRASONIC - speed_angle_diff * abs(output) + speed_straight_diff
 
+            # 보기 편하게 정수형이나 소수점 1자리로 출력
             print(f'L: {left:.1f} | R: {right:.1f} | Speed: {speed_cmd:.1f}')
 
             if speed_cmd < 0.0:
@@ -206,8 +208,6 @@ def main_control():
                 servo_pwm.stop()
         except Exception as e:
             print(f"PWM stop 중 오류: {e}")
-
-        # main.py에서 cleanup 할 것이므로 여기서는 생략하거나 안전하게 처리
         pass
 
 if __name__ == "__main__":

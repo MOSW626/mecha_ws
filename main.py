@@ -4,6 +4,7 @@
 import time
 import sys
 import RPi.GPIO as GPIO
+import gc  # ★ [추가] 가비지 컬렉터 모듈
 
 # 모듈 import
 try:
@@ -29,21 +30,28 @@ def main():
         print(f"❌ Error during Part 1: {e}")
         return
 
-    print("\n✅ PART 1 Complete. Switching to Ultrasonic Mode...")
+    print("\n✅ PART 1 Complete. Cleaning up memory...")
 
-    # ★ [중요] 모드 전환 시 GPIO 상태를 확실히 초기화
+    # ★ [핵심 수정] 메모리에 남은 PWM 객체 강제 삭제 (Zombie Process 제거)
     try:
-        GPIO.cleanup()
-        print("✓ GPIO Cleaned up for Part 2.")
-    except Exception:
-        pass
+        GPIO.cleanup() # 1차 하드웨어 정리
 
-    time.sleep(1.0) # 1초 대기 (안정화)
+        # linetracing 모듈 내부의 참조를 끊어줍니다 (선택사항이나 안전을 위해)
+        if 'linetracing_drive' in sys.modules:
+            sys.modules['linetracing_drive'].motor_pwm = None
+            sys.modules['linetracing_drive'].servo_pwm = None
+
+        gc.collect()   # 2차 메모리 정리 (여기서 __del__ 에러가 해소됨)
+        print("✓ Memory Cleaned (GC Collected).")
+    except Exception as e:
+        print(f"Warning during cleanup: {e}")
+
+    time.sleep(1.0) # 안정화 대기
 
     # PART 2: Ultrasonic Driving
     print("\n>>> STARTING PART 2: Low Defense Driving")
     try:
-        # 전역 초기화 코드가 제거된 safe 버전을 실행
+        # 안전하게 실행
         low_defense.main_control()
     except KeyboardInterrupt:
         print("\n🛑 System stopped by user.")
