@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # linetracing.py
-# Logic: ML First -> If ML says "cv", run CV logic.
+# Logic: ML First -> If ML says "cv", run CV logic. -> If Green, Escape immediately inside loop.
 
 import time
 import os
@@ -15,7 +15,7 @@ import linetracing_drive
 
 def run_linetracing_sequence():
     capture_enabled = True
-    args_testcase = "log_new_ml"
+    args_testcase = "log_ml_fix"
 
     frame_counter = 0
     image_counter = 0
@@ -42,13 +42,15 @@ def run_linetracing_sequence():
     linetracing_drive.set_servo_angle(90)
     print("\n🏎️  Line Tracing (Red/Green/CV Mode) Started! 🏎️\n")
 
-    # State: 0(10s Blind) -> 1(Find Red) -> 2(Wait Green)
     traffic_stage = 0
     start_time = time.time()
 
     consecutive_red_count = 0
     consecutive_green_count = 0
     DETECTION_REQUIREMENT = 3
+
+    # 성공적으로 Green을 통과했는지 확인하는 플래그
+    success_finish = False
 
     try:
         while True:
@@ -75,14 +77,13 @@ def run_linetracing_sequence():
             cv_result = "OFF"
             final_action = "non"
 
-            # === Stage 0: 10초 무적 (ML 무시, 무조건 CV) ===
+            # === Stage 0: 10초 무적 ===
             if traffic_stage == 0:
                 cv_result = linetracing_cv.judge_cv(frame_rgb)
                 final_action = cv_result if cv_result else "forward"
 
             # === Stage 1: RED 감시 ===
             elif traffic_stage == 1:
-                # (A) RED 발견 -> 정지
                 if ml_label == "red":
                     consecutive_red_count += 1
                     final_action = "red"
@@ -92,47 +93,53 @@ def run_linetracing_sequence():
                         consecutive_red_count = 0
                         linetracing_drive.stop_motor()
 
-                # (B) "CV" 라벨 발견 -> CV 주행 수행
-                # ★ 여기가 핵심 수정 사항입니다 ★
                 elif ml_label == "cv":
                     consecutive_red_count = 0
                     cv_result = linetracing_cv.judge_cv(frame_rgb)
                     final_action = cv_result if cv_result else "non"
 
-                # (C) 그 외 (Green, noline 등) -> 정지하거나 유지
                 else:
                     consecutive_red_count = 0
                     final_action = "non"
 
-            # === Stage 2: GREEN 대기 (정지 상태) ===
+            # === Stage 2: GREEN 대기 ===
             elif traffic_stage == 2:
                 final_action = "red" # 기본: 정지
 
                 if ml_label == "green":
                     consecutive_green_count += 1
-                    print(f"\rWaiting Green... {consecutive_green_count}", end="")
+                    print(f"\rWaiting Green... {consecutive_green_count}/{DETECTION_REQUIREMENT}", end="")
+
                     if consecutive_green_count >= DETECTION_REQUIREMENT:
-                        print("\n\n🟢 GREEN Confirmed! GO!\n")
-                        final_action = "green"
-                        break
+                        print("\n\n🟢 GREEN Confirmed! GO! -> Executing Escape Move...\n")
+
+                        # ★ [수정] 탈출 주행을 루프 안에서 즉시 실행 (Cleanup 되기 전에!)
+                        print("🚀 Escape Move: Driving Forward Blindly for 1.5 sec...")
+                        linetracing_drive.set_servo_angle(90)
+                        linetracing_drive.move_forward(80) # 속도 약간 증가 (20 -> 25)
+                        time.sleep(1.5) # 1.5초간 직진
+
+                        linetracing_drive.stop_motor()
+                        success_finish = True # 성공 플래그 세팅
+                        break # 루프 종료 -> finally로 이동
                 else:
                     consecutive_green_count = 0
 
             # [Actuate]
-            if final_action == "red":
-                linetracing_drive.stop_motor()
-                linetracing_drive.set_servo_angle(90)
-            elif final_action == "green":
-                pass
-            elif final_action == "non" or final_action == "OFF":
-                linetracing_drive.stop_motor()
-            else:
-                linetracing_drive.drive(final_action)
+            # 탈출 주행 중에는 아래 로직을 타지 않도록 함
+            if not success_finish:
+                if final_action == "red":
+                    linetracing_drive.stop_motor()
+                    linetracing_drive.set_servo_angle(90)
+                elif final_action == "non" or final_action == "OFF":
+                    linetracing_drive.stop_motor()
+                else:
+                    linetracing_drive.drive(final_action)
 
             # [Log]
-            stage_str = ["Blind", "FindRED", "WaitGRN"][traffic_stage]
-            # 터미널에 현재 ML과 CV 상태 출력
-            print(f"Stage: {stage_str} | ML: {ml_label:7s} | CV: {cv_result:7s} | Act: {final_action}")
+            if not success_finish:
+                stage_str = ["Blind", "FindRED", "WaitGRN"][traffic_stage]
+                print(f"Stage: {stage_str} | ML: {ml_label:7s} | CV: {cv_result:7s} | Act: {final_action}")
 
             if is_capture_frame:
                 frame_counter = 0
@@ -150,18 +157,15 @@ def run_linetracing_sequence():
         print(f"Error: {e}")
         return False
     finally:
+        # ★ 여기서 모든 자원을 해제합니다.
+        # 탈출 주행은 이미 위(while 루프 안)에서 끝났으므로 안전하게 닫기만 하면 됩니다.
         linetracing_drive.cleanup_drive()
         picam2.stop()
+        print("✓ Linetracing Cleanup Done.")
 
-    # === GREEN 탈출 ===
-    if final_action == "green" or traffic_stage == 2:
-        print("🚀 Escape Move...")
-        linetracing_drive.init_drive()
-        linetracing_drive.set_servo_angle(90)
-        linetracing_drive.move_forward(20)
-        time.sleep(1.5)
-        linetracing_drive.stop_motor()
-        linetracing_drive.cleanup_drive()
+    # 성공적으로 탈출했으면 True 반환하여 main.py가 다음 단계로 넘어가게 함
+    if success_finish:
+        print("✓ Handing over to Low Defense.")
         return True
 
     return False
