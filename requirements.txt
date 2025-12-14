@@ -1,0 +1,18 @@
+# mecha_ws - Main Dependencies
+# For Raspberry Pi
+
+# Core dependencies
+RPi.GPIO>=0.7.1
+picamera2>=0.3.12
+numpy>=1.21.0
+
+# Computer Vision
+opencv-python-headless>=4.5.0
+
+# Machine Learning
+tflite-runtime>=2.10.0
+
+# Optional: For development/testing
+# opencv-python>=4.5.0  # Use opencv-python-headless on Raspberry Pi
+# pillow>=9.0.0
+
