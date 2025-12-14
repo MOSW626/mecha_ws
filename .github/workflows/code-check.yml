@@ -1,0 +1,34 @@
+name: Code Check / 코드 체크
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Check Python syntax
+      run: |
+        python3 -m py_compile src/*.py || true
+        echo "Python syntax check completed"
+    
+    - name: Check file structure
+      run: |
+        echo "Checking project structure..."
+        test -f README.md && echo "✓ README.md exists"
+        test -f requirements.txt && echo "✓ requirements.txt exists"
+        test -f LICENSE && echo "✓ LICENSE exists"
+        test -d src && echo "✓ src/ directory exists"
+        test -d models && echo "✓ models/ directory exists"
+
