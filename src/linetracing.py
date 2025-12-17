@@ -13,6 +13,57 @@ import linetracing_cv
 import linetracing_ml
 import linetracing_drive
 
+def combine_ml2_cv_weighted(frame_rgb):
+    """
+    ML2와 CV를 가중치로 결합하여 최종 방향을 결정합니다.
+    가중치: ML2(0.2) + CV(0.8)
+
+    Returns: "forward", "left", "right", "non" 중 하나
+    """
+    # 방향을 숫자로 매핑
+    direction_map = {
+        "forward": 0,
+        "left": 1,
+        "right": 2,
+        "non": 3,
+        "noline": 3
+    }
+
+    # 역매핑 (숫자 -> 방향)
+    reverse_map = {0: "forward", 1: "left", 2: "right", 3: "non"}
+
+    # ML2 결과 가져오기
+    ml2_result = linetracing_ml.judge_ml2(frame_rgb)
+
+    # CV 결과 가져오기
+    cv_result = linetracing_cv.judge_cv(frame_rgb)
+
+    # 가중치 벡터 초기화 (forward, left, right, non)
+    weighted_scores = np.zeros(4)
+
+    # ML2 가중치 적용 (0.2)
+    if ml2_result:
+        ml2_lower = ml2_result.lower()
+        # red/green은 제외하고 방향만 고려
+        if ml2_lower in direction_map:
+            ml2_idx = direction_map[ml2_lower]
+            weighted_scores[ml2_idx] += 0.2
+
+    # CV 가중치 적용 (0.8)
+    if cv_result:
+        cv_lower = cv_result.lower()
+        if cv_lower in direction_map:
+            cv_idx = direction_map[cv_lower]
+            weighted_scores[cv_idx] += 0.8
+
+    # 가장 높은 점수의 방향 선택
+    if np.sum(weighted_scores) > 0:
+        final_idx = int(np.argmax(weighted_scores))
+        return reverse_map[final_idx]
+    else:
+        # 둘 다 결과가 없으면 "non" 반환
+        return "non"
+
 def run_linetracing_sequence():
     capture_enabled = False
     args_testcase = "log_ml_fix"
@@ -95,8 +146,8 @@ def run_linetracing_sequence():
 
                 elif ml_label == "cv":
                     consecutive_red_count = 0
-                    cv_result = linetracing_cv.judge_cv(frame_rgb)
-                    final_action = cv_result if cv_result else "non"
+                    # ML2와 CV를 가중치로 결합 (ML2: 0.2, CV: 0.8)
+                    final_action = combine_ml2_cv_weighted(frame_rgb)
 
                 else:
                     consecutive_red_count = 0

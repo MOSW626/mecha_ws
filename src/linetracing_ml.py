@@ -12,13 +12,22 @@ MODEL_PATH = "../models/gpu_model_lite.tflite"
 # infer_source.py에 있던 라벨 순서 그대로 사용
 LABELS = ["cv", "green", "red"]
 
+# ML2 모델 설정 (check_line.tflite)
+MODEL2_PATH = "../models/check_line.tflite"
+LABELS2 = ["forward", "right", "left", "green", "red", "noline"]  # ML2 라벨 순서
+
 interpreter = None
 inp = None
 out = None
 
+# ML2 인터프리터
+interpreter2 = None
+inp2 = None
+out2 = None
+
 def init_ml():
     """ML 모델을 로드하고 초기화합니다."""
-    global interpreter, inp, out
+    global interpreter, inp, out, interpreter2, inp2, out2
 
     if not os.path.exists(MODEL_PATH):
         print(f"✗ ML Model not found: {MODEL_PATH}")
@@ -30,10 +39,25 @@ def init_ml():
         inp = interpreter.get_input_details()[0]
         out = interpreter.get_output_details()[0]
         print("✓ TFLite model loaded successfully (infer_source logic)")
-        return True
     except Exception as e:
         print(f"⚠ ML Init Error: {e}")
         return False
+
+    # ML2 모델 로드 (check_line.tflite)
+    if os.path.exists(MODEL2_PATH):
+        try:
+            interpreter2 = tflite.Interpreter(model_path=MODEL2_PATH)
+            interpreter2.allocate_tensors()
+            inp2 = interpreter2.get_input_details()[0]
+            out2 = interpreter2.get_output_details()[0]
+            print("✓ ML2 model (check_line.tflite) loaded successfully")
+        except Exception as e:
+            print(f"⚠ ML2 Init Error: {e} (continuing without ML2)")
+            interpreter2 = None
+    else:
+        print(f"⚠ ML2 Model not found: {MODEL2_PATH} (continuing without ML2)")
+
+    return True
 # linetracing_ml.py 수정
 
 def preprocess_frame_for_model(frame_rgb):
@@ -95,4 +119,45 @@ def judge_ml(frame_rgb):
 
     except Exception as e:
         print(f"⚠ ML Prediction Error: {e}")
+        return None
+
+def judge_ml2(frame_rgb):
+    """
+    ML2 모델(check_line.tflite)을 사용하여 방향을 판단합니다.
+    Returns: "forward", "right", "left", "green", "red", "noline" 중 하나
+    """
+    global interpreter2, inp2, out2, LABELS2
+
+    if interpreter2 is None:
+        return None
+
+    try:
+        # ML2 모델 전처리 (전체 이미지 사용)
+        h, w, c = frame_rgb.shape
+        f = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
+
+        # 모델 입력 크기에 맞춰 리사이즈
+        expected_shape = inp2["shape"]
+        f = cv2.resize(f, (expected_shape[2], expected_shape[1]), interpolation=cv2.INTER_AREA)
+
+        # 정규화
+        expected_dtype = np.dtype(inp2["dtype"])
+        if expected_dtype == np.uint8:
+            out_img = (f).astype(np.uint8)
+        else:
+            out_img = (f.astype(np.float32) / 255.0).astype(np.float32)
+
+        x = out_img[None, ...]
+
+        interpreter2.set_tensor(inp2["index"], x)
+        interpreter2.invoke()
+
+        probs = interpreter2.get_tensor(out2["index"])[0]
+        pred_id = int(np.argmax(probs))
+        pred_label = LABELS2[pred_id]
+
+        return pred_label
+
+    except Exception as e:
+        print(f"⚠ ML2 Prediction Error: {e}")
         return None
